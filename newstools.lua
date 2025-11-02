@@ -1,9 +1,9 @@
 script_name('News Helper - Simple')
-script_version('9.7')
+script_version('10.50')
 script_description('Помощник для СМИ')
 script_author('Alikhan')
-local script_version = "9.7"
-local script_url = "https://github.com/alikhandwawd/newstools/releases/latest/download/newstools.lua"
+local script_version = "10.50"
+local script_url = "https://raw.githubusercontent.com/alikhandwawd/newstools/main/newstools.lua"
 local update_available = false
 local new_version = nil
 local isDevMode = true
@@ -19,6 +19,8 @@ local requests = require("requests")
 local fa = require 'fAwesome6'
 encoding.default = 'CP1251'
 local u8 = encoding.UTF8
+if not ui then ui={} end
+ui.fonts=ui.fonts or {}
 local windows = {
 	help = new.bool(),
 	customAd = new.bool(),
@@ -30,7 +32,11 @@ local windows = {
 	addCustomBind = new.bool(),
 	pro = new.bool(),
 	mainSettings = new.bool(),
-	checker = new.bool(false)
+	checker = new.bool(false),
+	rsWindow = new.bool(false),
+	rsEditor = new.bool(false),
+	rsInput = new.bool(false),
+	playerMenu = new.bool(false)
 }
 local settings = {
 	windowPos = {x = -1, y = -1},
@@ -44,10 +50,135 @@ local settings = {
 	bufferCategoryName = "Буфер объявлений",
 	starJumpKey = vk.VK_TAB,
 	silentMode = new.bool(false),
+	themes = {
+		current = "custom",
+		list = {
+			default = {
+				name = "Стандартная",
+				colors = {
+					Text = {0.95, 0.95, 0.95, 1},
+					WindowBg = {0.05, 0.05, 0.05, 0.94},
+					PopupBg = {0.07, 0.07, 0.07, 0.94},
+					Border = {0.25, 0.25, 0.25, 0.5},
+					TitleBgActive = {0.15, 0.15, 0.15, 1},
+					ScrollbarGrab = {0.3, 0.3, 0.3, 1},
+					Button = {0.25, 0.25, 0.25, 0.6},
+					FrameBgHovered = {0.15, 0.15, 0.15, 0.54},
+					FrameBgActive = {0.12, 0.12, 0.12, 0.54},
+					Tab = {0.15, 0.15, 0.15, 0.86},
+					ResizeGrip = {0.25, 0.25, 0.25, 0.25},
+					CategoryColor = {0.25, 0.25, 0.25, 1}
+				}
+			},
+			blue = {
+				name = "Синяя",
+				colors = {
+					Text = {0.82, 0.90, 1, 1},
+					WindowBg = {0.10, 0.12, 0.18, 0.94},
+					PopupBg = {0.08, 0.10, 0.16, 0.94},
+					Border = {0.30, 0.40, 0.60, 0.50},
+					TitleBgActive = {0.20, 0.30, 0.50, 1},
+					ScrollbarGrab = {0.25, 0.35, 0.55, 1},
+					Button = {0.20, 0.30, 0.50, 0.60},
+					FrameBgHovered = {0.20, 0.30, 0.50, 0.54},
+					FrameBgActive = {0.18, 0.27, 0.45, 0.54},
+					Tab = {0.18, 0.28, 0.45, 0.86},
+					ResizeGrip = {0.20, 0.30, 0.50, 0.25},
+					CategoryColor = {0.20, 0.30, 0.50, 1}
+				}
+			},
+			green = {
+				name = "Зелёная",
+				colors = {
+					Text = {96/255, 227/255, 84/255, 235/255},
+					WindowBg = {23/255, 31/255, 14/255, 240/255},
+					PopupBg = {3/255, 48/255, 4/255, 218/255},
+					Border = {2/255, 144/255, 70/255, 128/255},
+					TitleBgActive = {8/255, 147/255, 0/255, 1},
+					ScrollbarGrab = {135/255, 196/255, 35/255, 150/255},
+					Button = {69/255, 147/255, 99/255, 79/255},
+					FrameBgHovered = {90/255, 170/255, 120/255, 79/255},
+					FrameBgActive = {75/255, 155/255, 105/255, 79/255},
+					Tab = {69/255, 147/255, 99/255, 79/255},
+					ResizeGrip = {29/255, 255/255, 0/255, 144/255},
+					CategoryColor = {35/255, 85/255, 50/255, 1}
+				}
+			},
+			orange = {
+				name = "Оранжевая",
+				colors = {
+					Text = {1, 0.88, 0.80, 1},
+					WindowBg = {0.1, 0.06, 0.02, 0.94},
+					PopupBg = {0.12, 0.08, 0.03, 0.94},
+					Border = {0.7, 0.4, 0.1, 0.5},
+					TitleBgActive = {0.35, 0.22, 0.08, 1},
+					ScrollbarGrab = {0.6, 0.3, 0.1, 1},
+					Button = {0.6, 0.3, 0.1, 0.6},
+					FrameBgHovered = {0.5, 0.25, 0.08, 0.54},
+					FrameBgActive = {0.4, 0.2, 0.06, 0.54},
+					Tab = {0.4, 0.2, 0.08, 0.86},
+					ResizeGrip = {0.8, 0.4, 0.1, 0.25},
+					CategoryColor = {0.6, 0.3, 0.1, 1}
+				}
+			},
+			purple = {
+				name = "Фиолетовая",
+				colors = {
+					Text = {0.9, 0.8, 1, 1},
+					WindowBg = {0.08, 0.04, 0.12, 0.94},
+					PopupBg = {0.1, 0.05, 0.15, 0.94},
+					Border = {0.4, 0.2, 0.6, 0.5},
+					TitleBgActive = {0.3, 0.15, 0.45, 1},
+					ScrollbarGrab = {0.4, 0.2, 0.6, 1},
+					Button = {0.4, 0.2, 0.6, 0.6},
+					FrameBgHovered = {0.3, 0.15, 0.45, 0.54},
+					FrameBgActive = {0.25, 0.12, 0.37, 0.54},
+					Tab = {0.3, 0.15, 0.45, 0.86},
+					ResizeGrip = {0.4, 0.2, 0.6, 0.25},
+					CategoryColor = {0.4, 0.2, 0.6, 1}
+				}
+			},
+			red = {
+				name = "Красная",
+				colors = {
+					Text = {1, 0.82, 0.82, 1},
+					WindowBg = {0.15, 0.05, 0.05, 0.94},
+					PopupBg = {0.12, 0.04, 0.04, 0.94},
+					Border = {0.60, 0.20, 0.20, 0.50},
+					TitleBgActive = {0.40, 0.15, 0.15, 1},
+					ScrollbarGrab = {0.50, 0.20, 0.20, 1},
+					Button = {0.45, 0.18, 0.18, 0.60},
+					FrameBgHovered = {0.50, 0.20, 0.20, 0.54},
+					FrameBgActive = {0.40, 0.16, 0.16, 0.54},
+					Tab = {0.40, 0.16, 0.16, 0.86},
+					ResizeGrip = {0.45, 0.18, 0.18, 0.25},
+					CategoryColor = {0.45, 0.18, 0.18, 1}
+				}
+			},
+			custom = {
+				name = "Своя",
+				colors = {
+					Text = {1, 1, 1, 1},
+					WindowBg = {0.06, 0.06, 0.06, 0.94},
+					PopupBg = {0.08, 0.08, 0.08, 0.94},
+					Border = {0.43, 0.43, 0.50, 0.50},
+					TitleBgActive = {0.16, 0.29, 0.48, 1},
+					ScrollbarGrab = {0.31, 0.31, 0.31, 1},
+					Button = {0.26, 0.59, 0.98, 0.40},
+					FrameBgHovered = {0.26, 0.45, 0.68, 0.54},
+					FrameBgActive = {0.20, 0.35, 0.58, 0.54},
+					Tab = {0.18, 0.35, 0.58, 0.86},
+					ResizeGrip = {0.26, 0.59, 0.98, 0.25},
+					CategoryColor = {0.26, 0.59, 0.98, 1}
+				}
+			}
+		}
+	},
 	colors = {
 		background = imgui.new.float[3](0.07, 0.07, 0.07),
-		categoryButtons = imgui.new.float[3](0.12, 0.12, 0.12),
-		itemButtons = imgui.new.float[3](0.20, 0.20, 0.20)
+		categoryButtons = imgui.new.float[4](0.12, 0.12, 0.12, 1),
+		itemButtons = imgui.new.float[4](0.20, 0.20, 0.20, 1),
+		categoryColor = imgui.new.float[3](0.26, 0.59, 0.98)
 	},
 	checker = {
 		enabled = new.bool(false),
@@ -79,10 +210,15 @@ local settings = {
 		size = {x = 420, y = 240},
 		tempSize = {x = 420, y = 240},
 		isPreview = false,
-		data = {},
+		data = {
+			authorId = nil,
+			isAuthorOnline = false
+		},
 		originalText = nil,
 		nextPos = nil,
-		responseText = imgui.new.char[1024]()
+		responseText = imgui.new.char[1024](),
+		deleteMode = false,
+		deleteReason = ""
 	}
 }
 local ui = {
@@ -148,7 +284,11 @@ local efir = {
 	messageDisplayNames = {},
 	lastBallVariant = {},
 	messageVariants = {},
+	confirmFinishEfir = false,
+	confirmEndEfir = false,
 	mode = new.bool(false),
+	pausedManually = false,
+	questionId = 0,
 	awaitingAnswer = false,
 	currentQuestion = 0,
 	lastSMSTime = 0,
@@ -264,27 +404,24 @@ local efir = {
 	auto = {
 		active = false,
 		currentQuestion = 0,
+		totalQuestions = 0,
 		waitingForAnswer = false,
 		correctAnswers = {},
-		efirType = nil
+		efirType = nil,
+		updating = false,
+		actionQueue = {},
+		pausedDuringQuestions = false,
+		pausedDuringStartup = false,
+		finishedQuestions = false,
+		pausedAnswer = nil
 	}
 }
-for i = 1, 10 do
-	efir.examples.math[i] = imgui.new.char[256]()
-	efir.answers.math[i] = imgui.new.char[256]()
-	efir.examples.country[i] = imgui.new.char[256]()
-	efir.answers.country[i] = imgui.new.char[256]()
-	efir.examples.himia[i] = imgui.new.char[256]()
-	efir.answers.himia[i] = imgui.new.char[256]()
-	efir.examples.zerkalo[i] = imgui.new.char[256]()
-	efir.answers.zerkalo[i] = imgui.new.char[256]()
-	efir.examples.annagramm[i] = imgui.new.char[256]()
-	efir.answers.annagramm[i] = imgui.new.char[256]()
-	efir.examples.zagadki[i] = imgui.new.char[256]()
-	efir.answers.zagadki[i] = imgui.new.char[256]()
-	efir.examples.sinonim[i] = imgui.new.char[256]()
-	efir.answers.sinonim[i] = imgui.new.char[256]()
-end
+local bulkInput = {
+	active = false,
+	mode = nil,
+	efirType = nil,
+	text = imgui.new.char[8192]()
+}
 local user = {
 	nick = nil,
 	rang = nil,
@@ -315,6 +452,8 @@ local flags = {
 	inputRecreateFrame = 0,
 	blockNextEnter = false,
 	blockSendUntil = 0,
+	updateRetryCount = 0,
+	updateFailed = false
 }
 local bufferHistory = {
 	currentIndex = 0,
@@ -382,20 +521,6 @@ local states = {
 	enterWasPressed = false,
 	CustomAdEditCallbackCast = nil
 }
-if not vk.VK_SHIFT then vk.VK_SHIFT = 0x10 end
-if not vk.VK_CONTROL then vk.VK_CONTROL = 0x11 end
-if not vk.VK_MENU then vk.VK_MENU = 0x12 end
-local tabWindowSizes = {
-	[0] = {x = 800, y = 620},
-	[1] = {x = 800, y = 616},
-	[2] = {x = 800, y = 310},
-	[3] = {x = 800, y = 350},
-	[4] = {x = 800, y = 307},
-	[5] = {x = 800, y = 240},
-	[6] = {x = 800, y = 623},
-	[7] = {x = 800, y = 700},
-	[8] = {x = 800, y = 600}
-}
 local helpers = {
 	showVariablesHelp = new.bool(false),
 	newMessageKey = imgui.new.char[64](),
@@ -407,6 +532,85 @@ local helpers = {
 local mathResults = {
 	primer1 = nil,
 	primer2 = nil
+}
+local chat = {
+	scoreUpdateQueue = {},
+	idPlayers = {},
+	myId = -1
+}
+local cache = {
+	lower = {},
+	search = {}
+}
+local binder = {
+	list = {},
+	editing = nil,
+	hoveredIndex = nil,
+	deleteConfirm = nil,
+	editWindow = new.bool(false),
+	conditionsWindow = new.bool(false),
+	keyCapture = {
+		active = false,
+		keys = {},
+		lastKeyTime = 0
+	}
+}
+local binderEdit = {
+	name = imgui.new.char[256](),
+	hotkey = {},
+	command = imgui.new.char[64](),
+	enableOnChat = new.bool(false),
+	enableOnDialog = new.bool(false),
+	requireConfirm = new.bool(false),
+	blockKey = new.bool(false),
+	mode = new.int(1),
+	delay = new.int(3000),
+	lines = {},
+	squareText = imgui.new.char[8192](),
+	tempHotkey = {}
+}
+local rsSettings = {
+	interactionKey=vk.VK_R,
+	isSettingKey=false,
+	actions={
+		invite={name="Принять сотрудника",lines={"/me достал планшет из кармана","/me зашёл в базу данных сотрудников","/me внёс данные нового сотрудника","/me передал планшет обратно в карман"},delay=3000,needInput=false},
+		uninvite={name="Уволить сотрудника",lines={"/me достал планшет из кармана","/me зашёл в базу данных сотрудников","/me удалил данные сотрудника из базы данных"},delay=3000,needInput=true,inputPlaceholder="Введите причину увольнения"},
+		rank={name="Повысить сотрудника",lines={"/me достал планшет из кармана","/me зашёл в базу данных сотрудников","/me изменил ранг сотрудника в базе данных"},delay=3000,needInput=true,inputPlaceholder="Введите новый ранг (1-10)"},
+		givedress={name="Дать одежду",lines={"/me открыл шкаф с формой","/me достал комплект униформы","/me протянул униформу сотруднику"},delay=3000,needInput=false},
+		vig={name="Выдать выговор",lines={"/me достал планшет из кармана","/me зашёл в систему выговоров","/me внёс выговор в личное дело сотрудника"},delay=3000,needInput=true,inputPlaceholder="Введите причину выговора"},
+		unvig={name="Снять выговор",lines={"/me достал планшет из кармана","/me зашёл в систему выговоров","/me снял выговор с личного дела сотрудника"},delay=3000,needInput=false}
+	}
+}
+local playerInteraction = {
+	targetId = -1,
+	targetName = "",
+	hoveredPlayerId = -1,
+	inputType = "",
+	inputTitle = "",
+	inputText = imgui.new.char[256]()
+}
+local rsEditor = {
+	lines = {},
+	newLineText = imgui.new.char[512](),
+	focusInput = false,
+	scrollToBottom = false
+}
+local autoRP = {
+	enabled = new.bool(false)
+}
+if not vk.VK_SHIFT then vk.VK_SHIFT = 0x10 end
+if not vk.VK_CONTROL then vk.VK_CONTROL = 0x11 end
+if not vk.VK_MENU then vk.VK_MENU = 0x12 end
+local tabWindowSizes = {
+	[0] = {x = 800, y = 620},
+	[1] = {x = 800, y = 783},
+	[2] = {x = 800, y = 310},
+	[3] = {x = 800, y = 350},
+	[4] = {x = 800, y = 307},
+	[5] = {x = 800, y = 240},
+	[6] = {x = 800, y = 623},
+	[7] = {x = 800, y = 700},
+	[8] = {x = 800, y = 600}
 }
 local trstl1 = {
 	['ph'] = 'ф',['Ph'] = 'Ф',['Ch'] = 'Ч',['ch'] = 'ч',['Th'] = 'Т',['th'] = 'т',
@@ -428,6 +632,7 @@ local trstl = {
 local translitExceptions = {
 	["Anastasia Sun"] = "Анастасия Сан",
 	["Ivan Petrov"] = "Иван Петров",
+	["Ferrucio_Snow"] = "Ферручо Сноу",
 }
 local hotkeyNames = {
 	[vk.VK_F1] = "F1", [vk.VK_F2] = "F2", [vk.VK_F3] = "F3", [vk.VK_F4] = "F4",
@@ -469,8 +674,6 @@ local hotkeyNames = {
 }
 for i = 0x30, 0x39 do hotkeyNames[i] = string.char(i) end
 for i = 0x41, 0x5A do hotkeyNames[i] = string.char(i) end
-local lower_cache = {}
-local search_cache = {}
 local en_to_ru = {
 	q='й', w='ц', e='у', r='к', t='е', y='н', u='г', i='ш', o='щ', p='з', ['[']='х', [']']='ъ',
 	a='ф', s='ы', d='в', f='а', g='п', h='р', j='о', k='л', l='д', [';']='ж', ["'"]='э',
@@ -497,26 +700,202 @@ local aboutTabContent = {
 	}
 }
 local aboutTabWhatsNew = {
-	'Была пофикшена кнопка паузы в эфирах, теперь не вызывается при открытом чате/курсоре',
-	'Была убрана окно ввода переменных',
-	'Была изменена кнопка оригинал текст, теперь там можно правой кнопкой мышью вставить префикс а с левой оригинал текст',
-	'Была исправлено краш при открытии редактирования биндов',
-	'Улучшена транслитерация ников',
-	'Была добавлена поиск в окно справочника',
-	'Была добавлена в эфиры автоматический режим, (система еще в тестировании, пользуйтесь на свой страх и риск :3',
-	'Было исправлено автоматический режим, пожалуйста протестируйте и сообщите работает ли или нет',
-	'Были исправлены эфиры'
+	'Были полностью пофикшены все эфиры',
+	'Полностью доработана система автоэфира',
+	'Добавлено автоотзеркаливания текста в эфире "Зеркало"',
+	'Чекер теперь стал чётче',
+	'Автообновление',
+	'Добавлен полноценный менеджер биндов с поддержкой комбинаций клавиш',
+	'Добавлена панель управления сотрудниками для заместителей',
+	'Добавлены возможность менять все цвета а еще темы',
+	'Исправлены цвета теперь они все меняются'
 }
-local chatIdPlayers = {}
-local chatIdEnabled = true
-local chatIdMyId = -1
-local lower_cache = {}
-local search_cache = {}
 local ballMessageVariants = {
 	ball1 = {" получает * балл!", " зарабатывает * балл!", " набирает * балл!"},
 	ball2 = {" получает * балла!", " зарабатывает * балла!", " набирает * балла!"},
 	ball5 = {" получает * баллов!", " зарабатывает * баллов!", " набирает * баллов!"}
 }
+local efirLineCount = {
+	math = 10, country = 10, himia = 10, zerkalo = 10,
+	annagramm = 10, zagadki = 10, sinonim = 10
+}
+function compareVersions(localVer, remoteVer)
+	local function split(ver)
+		local t = {}
+		for num in string.gmatch(ver, "[0-9]+") do
+			table.insert(t, tonumber(num))
+		end
+		return t
+	end
+	local l, r = split(localVer), split(remoteVer)
+	for i = 1, math.max(#l, #r) do
+		local lv, rv = l[i] or 0, r[i] or 0
+		if lv < rv then return true end
+		if lv > rv then return false end
+	end
+	return false
+end
+function validateScript(path)
+	local file = io.open(path, 'rb')
+	if not file then return false end
+	local content = file:read('*a')
+	file:close()
+	local size = #content
+	if size < 204800 then return false end
+	if not content:find('imgui%.OnInitialize') then return false end
+	if not content:find('function main') then return false end
+	return true
+end
+function createBackup()
+	local backup_path = settings.configFolder .. 'newstools.backup'
+	if doesFileExist(backup_path) then os.remove(backup_path) end
+	local source = io.open(thisScript().path, 'rb')
+	if not source then return false end
+	local content = source:read('*a')
+	source:close()
+	local dest = io.open(backup_path, 'wb')
+	if not dest then return false end
+	dest:write(content)
+	dest:close()
+	return true
+end
+function restoreBackup()
+	local backup_path = settings.configFolder .. 'newstools.backup'
+	if doesFileExist(backup_path) then
+		if doesFileExist(thisScript().path) then os.remove(thisScript().path) end
+		local source = io.open(backup_path, 'rb')
+		if not source then return false end
+		local content = source:read('*a')
+		source:close()
+		local dest = io.open(thisScript().path, 'wb')
+		if not dest then return false end
+		dest:write(content)
+		dest:close()
+		return true
+	end
+	return false
+end
+function cleanUpdateFiles()
+	local files = {'newstools.backup', 'newstools.tmp'}
+	for _, file in ipairs(files) do
+		local path = settings.configFolder .. file
+		if doesFileExist(path) then
+			pcall(function() os.remove(path) end)
+		end
+	end
+end
+function checkForUpdates(manual)
+	lua_thread.create(function()
+		if flags.updaterBusy then return end
+		
+		if manual then
+			sampAddChatMessage(u8:decode("[News Helper] Проверяем обновления..."), 0xFFFF00)
+		end
+		flags.updaterBusy = true
+		
+		local ok, response = pcall(function()
+			return requests.get("https://raw.githubusercontent.com/alikhandwawd/newstools/main/version.txt", { timeout = 10 })
+		end)
+		
+		if not ok or not response or not response.text then
+			sampAddChatMessage(u8:decode("[News Helper] Ошибка соединения с GitHub."), 0xFF0000)
+			flags.updaterBusy = false
+			return
+		end
+		
+		local server_version = response.text:gsub("[\n\r%s]", ""):gsub("^v", "")
+		
+		if server_version ~= "" and compareVersions(script_version, server_version) then
+			update_available = true
+			new_version = server_version
+			sampAddChatMessage(u8:decode(string.format("[News Helper] Доступно обновление до %s!", server_version)), 0x00FF00)
+			if not manual then
+				sampAddChatMessage(u8:decode("[News Helper] Автообновление через 3 секунды..."), 0xFFFF00)
+				wait(3000)
+				installUpdate()
+			else
+				sampAddChatMessage(u8:decode("[News Helper] Используйте /newsinstall для установки."), 0xFFFF00)
+			end
+		else
+			if manual then
+				sampAddChatMessage(u8:decode("[News Helper] У вас последняя версия."), 0x00FF00)
+			end
+			flags.updaterBusy = false
+		end
+	end)
+end
+function installUpdate()
+	lua_thread.create(function()
+		if not update_available or not new_version then
+			sampAddChatMessage(u8:decode("[News Helper] Нет доступных обновлений."), 0xFF0000)
+			return
+		end
+
+		flags.updaterBusy = true
+		local backup_path = settings.configFolder .. 'newstools.backup'
+		local temp_path = settings.configFolder .. 'newstools.tmp'
+
+		sampAddChatMessage(u8:decode("[News Helper] Создание резервной копии..."), 0xFFFF00)
+		if not createBackup() then
+			sampAddChatMessage(u8:decode("[News Helper] Ошибка создания бэкапа."), 0xFF0000)
+			flags.updaterBusy = false
+			return
+		end
+
+		sampAddChatMessage(u8:decode("[News Helper] Скачиваем обновление..."), 0xFFFF00)
+		local download_url = "https://raw.githubusercontent.com/alikhandwawd/newstools/main/newstools.lua"
+		
+		local ok, err = downloadUrlToFile(download_url, temp_path)
+		if ok then
+			sampAddChatMessage(u8:decode("[News Helper] Проверка файла..."), 0xFFFF00)
+			wait(500)
+			if validateScript(temp_path) then
+				local success_copy = pcall(function()
+					if doesFileExist(thisScript().path) then os.remove(thisScript().path) end
+					local fin = io.open(temp_path, "rb")
+					local fout = io.open(thisScript().path, "wb")
+					if fin and fout then
+						fout:write(fin:read("*a"))
+						fin:close()
+						fout:close()
+					end
+				end)
+				if success_copy then
+					cleanUpdateFiles()
+					flags.updateRetryCount = 0
+					flags.updateFailed = false
+					flags.nextUpdateCheck = nil
+					sampAddChatMessage(u8:decode(string.format("[News Helper] Обновление до %s установлено!", new_version)), 0x00FF00)
+					flags.updaterBusy = false
+					wait(2000)
+					thisScript():reload()
+				else
+					sampAddChatMessage(u8:decode("[News Helper] Ошибка установки. Восстановление..."), 0xFF0000)
+					if restoreBackup() then
+						sampAddChatMessage(u8:decode("[News Helper] Восстановлена предыдущая версия."), 0xFFFF00)
+					else
+						sampAddChatMessage(u8:decode("[News Helper] Ошибка восстановления!"), 0xFF0000)
+					end
+					cleanUpdateFiles()
+					flags.updaterBusy = false
+				end
+			else
+				sampAddChatMessage(u8:decode("[News Helper] Файл не прошёл проверку."), 0xFF0000)
+				if restoreBackup() then
+					sampAddChatMessage(u8:decode("[News Helper] Восстановлена предыдущая версия."), 0xFFFF00)
+				end
+				cleanUpdateFiles()
+				flags.updaterBusy = false
+				flags.updateFailed = true
+			end
+		else
+			sampAddChatMessage(u8:decode("[News Helper] Ошибка скачивания: " .. tostring(err)), 0xFF0000)
+			restoreBackup()
+			cleanUpdateFiles()
+			flags.updaterBusy = false
+		end
+	end)
+end
 local function InitCustomAdCallback()
 	if not states.CustomAdEditCallback then
 		states.CustomAdEditCallback = function(data)
@@ -568,14 +947,10 @@ local function InitCustomAdCallback()
 		states.CustomAdEditCallbackCast = ffi.cast("int(*)(ImGuiInputTextCallbackData*)", states.CustomAdEditCallback)
 	end
 end
-function getKeyName(vkCode)
-	if not vkCode then return "Не назначено" end
-	return hotkeyNames[vkCode] or string.format("Key[%d]", vkCode)
-end
 local function lower_utf8_optimized(s)
 	if not s then return '' end
-	if lower_cache[s] then
-		return lower_cache[s]
+	if cache.lower[s] then
+		return cache.lower[s]
 	end
 	local out = string.lower(s)
 	local replacements = {
@@ -590,11 +965,21 @@ local function lower_utf8_optimized(s)
 	for upper, lower in pairs(replacements) do
 		out = out:gsub(upper, lower)
 	end
-	if #lower_cache > 1000 then
-		lower_cache = {}
+	if #cache.lower > 1000 then
+		cache.lower = {}
 	end
-	lower_cache[s] = out
+	cache.lower[s] = out
 	return out
+end
+local function switch_layout(text, to)
+	local result = {}
+	local map = (to == "ru") and en_to_ru or ru_to_en
+	for uchar in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+		local lower = uchar:lower()
+		local mapped = map[lower] or uchar
+		table.insert(result, mapped)
+	end
+	return table.concat(result)
 end
 local function strip_bb_tags(str)
 	if not str then return "" end
@@ -633,57 +1018,13 @@ local function normalizeTextForComparison(str)
 	str = str:gsub("%s+$", "")
 	return str
 end
-function navigateBufferUp()
-	local bufferData = loadBufferFromFile()
-	local currentAdText = normalizeTextForComparison(settings.customAd.data.advertisement or "")
-	if bufferNavigationState.lastAdText ~= currentAdText then
-		bufferNavigationState.isNavigating = false
-		bufferNavigationState.currentIndex = 0
-		bufferNavigationState.originalText = nil
-		bufferNavigationState.lastAdText = currentAdText
-	end
-	if not bufferNavigationState.isNavigating then
-		bufferNavigationState.isNavigating = true
-		bufferNavigationState.originalText = ffi.string(settings.customAd.responseText)
-		bufferNavigationState.currentIndex = 0
-	end
-	local found = false
-	for i = bufferNavigationState.currentIndex + 1, #bufferData do
-		local bufferAdText = normalizeTextForComparison(bufferData[i].advertisement or "")
-		if bufferAdText == currentAdText then
-			local textToSet = bufferData[i].editedText or ""
-			flags.pendingBufferInsert = textToSet
-			flags.inputRecreateFrame = 2
-			bufferNavigationState.currentIndex = i
-			found = true
-			chatMessage(u8:decode('[News Helper] Загружен вариант #' .. i .. ' из буфера'), 0xFFFF00)
-			break
-		end
-	end
-	if not found then
-		bufferNavigationState.currentIndex = 0
-		chatMessage(u8:decode('[News Helper] Больше нет вариантов'), 0xFFFF00)
-	end
-end
-function navigateBufferDown()
-	if bufferNavigationState.isNavigating and bufferNavigationState.originalText then
-		flags.pendingBufferInsert = bufferNavigationState.originalText
-		flags.inputRecreateFrame = 2
-		bufferNavigationState.isNavigating = false
-		bufferNavigationState.currentIndex = 0
-		bufferNavigationState.lastAdText = nil
-		chatMessage(u8:decode('[News Helper] Возвращен оригинальный текст'), 0xFFFF00)
-	end
-end
-local function switch_layout(text, to)
-	local result = {}
-	local map = (to == "ru") and en_to_ru or ru_to_en
-	for uchar in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
-		local lower = uchar:lower()
-		local mapped = map[lower] or uchar
-		table.insert(result, mapped)
-	end
-	return table.concat(result)
+local function normalizeForBufferCompare(text)
+	if not text then return "" end
+	text = text:gsub("\r\n", "")
+	text = text:gsub("\n", "")
+	text = text:gsub("%s+", "")
+	text = lower_utf8_optimized(text)
+	return text
 end
 local function strip_bb_tags(str)
 	if not str then return "" end
@@ -737,15 +1078,15 @@ local function insertTextToInput(text)
 	ffi.copy(settings.customAd.responseText, text, len)
 	flags.focusResponse = true
 end
-local function getHotkeyString(hotkey)
-	if not hotkey or #hotkey == 0 then
-		return "Не назначено"
-	end
-	local parts = {}
-	for _, key in ipairs(hotkey) do
-		table.insert(parts, getKeyName(key))
-	end
-	return table.concat(parts, " + ")
+local function cleanNickname(nick)
+	if not nick then return "" end
+	nick = nick:gsub("%[PC%]", ""):gsub("%[M%]", ""):gsub("%[%d+%]", "")
+	nick = nick:gsub("^%s+", ""):gsub("%s+$", "")
+	nick = nick:gsub("[а-яёА-ЯЁ]", function(c)
+		local cyrillic = {а="a", б="b", в="v", г="g", д="d", е="e", ё="yo", ж="zh", з="z", и="i", й="y", к="k", л="l", м="m", н="n", о="o", п="p", р="r", с="s", т="t", у="u", ф="f", х="kh", ц="ts", ч="ch", ш="sh", щ="sch", ъ="", ы="y", ь="", э="e", ю="yu", я="ya"}
+		return cyrillic[c:lower()] or c
+	end)
+	return nick
 end
 local function calculateAboutTabHeight()
 	local baseHeight = 50
@@ -770,85 +1111,6 @@ local function calculateBindsTabHeight()
 	local totalCustomBindsHeight = customBindsCount * hotkeyLineHeight
 	return baseHeight + totalCustomBindsHeight
 end
-function getChatIdAllPlayers()
-	chatIdPlayers = {}
-	for i = 0, sampGetMaxPlayerId() do
-		if sampIsPlayerConnected(i) or i == chatIdMyId then
-			chatIdPlayers[i] = sampGetPlayerNickname(i)
-		end
-	end
-	return chatIdPlayers
-end
-function onReceiveRpc(id, bs)
-	if id == 137 then
-		local playerId = raknetBitStreamReadInt16(bs)
-		raknetBitStreamIgnoreBits(bs, 40)
-		local nickLen = raknetBitStreamReadInt8(bs)
-		local name = raknetBitStreamReadString(bs, nickLen)
-		chatIdPlayers[playerId] = name
-	end
-	if id == 138 then
-		local playerId = raknetBitStreamReadInt16(bs)
-		chatIdPlayers[playerId] = nil
-	end
-end
-function calculateEfirMessagesTabHeight()
-	if not efir.selectedType or not efir.messages[efir.selectedType] then
-		return 500
-	end
-	local baseHeight = 250  
-	local messageLineHeight = 60  
-	local paddingAndSpacing = 50
-	local categories = getEfirMessageCategories(efir.selectedType)
-	local messageCount = 0
-	if efir.currentSubTab == 1 then  
-		messageCount = #categories.start
-	elseif efir.currentSubTab == 2 then  
-		messageCount = #categories.additional
-	elseif efir.currentSubTab == 3 then  
-		messageCount = #categories.end_messages
-	end
-	local messagesHeight = messageCount * messageLineHeight
-	local maxScrollHeight = 700
-	if messagesHeight > maxScrollHeight then
-		messagesHeight = maxScrollHeight
-	end
-	local totalHeight = baseHeight + messagesHeight + paddingAndSpacing
-	local minHeight = 500
-	local maxHeight = 950
-	if totalHeight < minHeight then
-		totalHeight = minHeight
-	elseif totalHeight > maxHeight then
-		totalHeight = maxHeight
-	end
-	return totalHeight
-end
-function calculateFreeEfirTabHeight()
-	if efir.custom.viewMode == 'square' then
-		return 800
-	end
-	local baseHeight = 180  
-	local lineHeight = 30
-	local paddingAndSpacing = 50
-	local lineCount = 0
-	if efir.custom.selected and efir.custom.lines and #efir.custom.lines > 0 then
-		lineCount = #efir.custom.lines
-	end
-	local addButtonHeight = 40
-	local linesHeight = lineCount * lineHeight
-	local totalHeight = baseHeight + linesHeight + addButtonHeight + paddingAndSpacing
-	local minHeight = 600
-	local maxHeight = 800
-	if totalHeight < minHeight then
-		totalHeight = minHeight
-	elseif totalHeight > maxHeight then
-		totalHeight = maxHeight
-	end
-	return totalHeight
-end
-pcall(ffi.cdef, [[
-	short GetAsyncKeyState(int vKey);
-]])
 local function isKeyPressed(key)
 	return bit.band(ffi.C.GetAsyncKeyState(key), 0x8000) ~= 0
 end
@@ -1227,6 +1489,400 @@ local function render_pro_text(text, baseScale)
 		end
 	end
 end
+local function searchInText_optimized(searchQuery, targetText, searchText)
+	if not searchQuery or searchQuery == '' then return false end
+	local cache_key = searchQuery .. "|" .. (targetText or "") .. "|" .. (searchText or "")
+	if cache.search[cache_key] ~= nil then
+		return cache.search[cache_key]
+	end
+	local q = searchQuery:gsub("[%s\r\n]+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+	local qnorm = lower_utf8_optimized(q)
+	local altRu = switch_layout(qnorm, "ru")
+	local altEn = switch_layout(qnorm, "en")
+	local queryAlt = (altRu ~= qnorm) and altRu or altEn
+	local result = false
+	if targetText then
+		local tnorm = lower_utf8_optimized(targetText)
+		if tnorm:find(qnorm, 1, true) or tnorm:find(queryAlt, 1, true) then 
+			result = true
+		end
+	end
+	if not result and searchText then
+		local snorm = lower_utf8_optimized(searchText)
+		if snorm:find(qnorm, 1, true) or snorm:find(queryAlt, 1, true) then 
+			result = true
+		end
+	end
+	if #cache.search > 5000 then
+		cache.search = {}
+	end
+	cache.search[cache_key] = result
+	return result
+end
+local function updateSearchResults(query)
+	if query == ui.search.lastQuery and ui.search.resultsValid then
+		return
+	end
+	ui.search.cachedResults = {}
+	ui.search.lastQuery = query
+	for i = 1, #data.newsHelpBind do
+		local category = data.newsHelpBind[i]
+		local matchingItems = {}
+		local isBufferCategory = category and category[1] == settings.bufferCategoryName
+		if query == "" then
+			for j = 2, #category do
+				table.insert(matchingItems, j)
+			end
+			ui.search.cachedResults[i] = matchingItems
+		else
+			for j = 2, #category do 
+				local bind = category[j] or {}
+				local bindName = bind[1] or ''
+				local bindText = bind[2] or ''
+				local bindAuthor = bind[3] or ''
+				if searchInText_optimized(query, bindName) or 
+					searchInText_optimized(query, bindText) or
+					searchInText_optimized(query, bindAuthor) then
+					table.insert(matchingItems, j)
+				end
+			end
+			if #matchingItems > 0 then
+				ui.search.cachedResults[i] = matchingItems
+			end
+		end
+	end
+	ui.search.resultsValid = true
+end
+local function reverseString(str)
+	if not str or str == "" then return "" end
+	local chars = {}
+	local i = 1
+	while i <= #str do
+		local byte = str:byte(i)
+		local char_len = 1
+		if byte >= 240 then char_len = 4
+		elseif byte >= 224 then char_len = 3
+		elseif byte >= 192 then char_len = 2
+		end
+		table.insert(chars, str:sub(i, i + char_len - 1))
+		i = i + char_len
+	end
+	local result = ""
+	for j = #chars, 1, -1 do
+		result = result .. chars[j]
+	end
+	return result
+end
+local function getCheckerFont(size)
+	size=math.floor(math.max(8,math.min(30,tonumber(size) or 13)))
+	return ui.fonts.checkerFonts[size] or ui.fonts.bold
+end
+local function json_escape(str)
+	str = str:gsub('\\', '\\\\'):gsub('"', '\\"')
+	str = str:gsub('\n', '\\n'):gsub('\r', '\\r'):gsub('\t', '\\t')
+	return str
+end
+local function trim(s)
+	return (s or ""):match("^%s*(.-)%s*$")
+end
+local function getPlayerPlatform(playerId)
+	if not sampIsPlayerConnected(playerId) then return nil end
+	local fullNick = sampGetPlayerNickname(playerId)
+	if not fullNick then return nil end
+	if fullNick:find("%[PC%]") then
+		return "PC"
+	elseif fullNick:find("%[M%]") then
+		return "M"
+	end
+	return nil
+end
+local function parseMembers(raw_text)
+	local members = {}
+	if type(raw_text) ~= "string" then return members end
+	local lines = {}
+	for line in raw_text:gmatch("[^\r\n]+") do
+		table.insert(lines, line)
+	end
+	for i = 1, #lines do
+		local raw = lines[i]
+		local cleanLine = raw:gsub("{%x%x%x%x%x%x}", "")
+		cleanLine = trim(cleanLine)
+		if cleanLine ~= "" and cleanLine:match("^%d+%.") then
+			local parts = {}
+			for part in cleanLine:gmatch("[^|]+") do
+				table.insert(parts, trim(part))
+			end
+			if #parts >= 4 then
+				local num, pos, rank = parts[1]:match("^(%d+)%.%s*(.-)%[(%d+)%]")
+				local name, id = parts[2]:match("^([%w_]+)%s*%[(%d+)%]")
+				local phone = parts[3] or "N/A"
+				local warns = parts[4] or "0/0"
+				local afk, mute, noUniform = nil, nil, false
+				local extra = ""
+				if #parts > 4 then
+					for j = 5, #parts do
+						extra = extra .. " " .. parts[j]
+					end
+				end
+				extra = trim(extra:gsub("{%x%x%x%x%x%x}", ""))
+				extra = cp1251_to_utf8(extra)
+				local afkMatch = extra:match("[Aa][Ff][Kk]:?%s*([%w:%s]+)")
+				if afkMatch then
+					afk = trim(afkMatch)
+					extra = extra:gsub("[Aa][Ff][Kk]:?%s*[%w:%s]+", "")
+					extra = trim(extra)
+				end
+				local muteMatch = extra:match("[Вв]%s*муте%s*%(*%s*([%d:]+)%s*%)")
+				if not muteMatch then
+					muteMatch = extra:match("муте%s*%(*%s*([%d:]+)%s*%)")
+				end
+				if not muteMatch then
+					muteMatch = extra:match("[Mm][Uu][Tt][Ee]%s*%(*%s*([%d:]+)%s*%)")
+				end
+				if muteMatch then
+					mute = trim(muteMatch)
+					extra = extra:gsub("[Вв]%s*муте%s*%(*%s*[%d:]+%s*%)", "")
+					extra = trim(extra)
+				end
+				if extra:lower():find("без формы") then
+					noUniform = true
+					extra = extra:gsub("[Бб]ез формы", "")
+					extra = trim(extra)
+				end
+				local isOffline = false
+				if pos and pos:find("^%-") then
+					isOffline = true
+				end
+				local platform = nil
+				if num and name and id then
+					local playerId = tonumber(id)
+					if playerId then
+						platform = getPlayerPlatform(playerId)
+					end
+					table.insert(members, {
+						num = tonumber(num) or 0,
+						position = cp1251_to_utf8(pos or "N/A"),
+						rank = tonumber(rank) or 0,
+						name = cp1251_to_utf8(name),
+						id = tonumber(id) or 0,
+						phone = phone or "N/A",
+						warns = warns or "0/0",
+						afk = afk,
+						mute = mute,
+						online = not isOffline,
+						noUniform = noUniform,
+						platform = platform
+					})
+				end
+			end
+		end
+	end
+	return members
+end
+local function decode1251(str)
+	local t = {
+		[0xC0]='А',[0xC1]='Б',[0xC2]='В',[0xC3]='Г',[0xC4]='Д',[0xC5]='Е',[0xC6]='Ж',[0xC7]='З',[0xC8]='И',[0xC9]='Й',
+		[0xCA]='К',[0xCB]='Л',[0xCC]='М',[0xCD]='Н',[0xCE]='О',[0xCF]='П',[0xD0]='Р',[0xD1]='С',[0xD2]='Т',[0xD3]='У',
+		[0xD4]='Ф',[0xD5]='Х',[0xD6]='Ц',[0xD7]='Ч',[0xD8]='Ш',[0xD9]='Щ',[0xDA]='Ъ',[0xDB]='Ы',[0xDC]='Ь',[0xDD]='Э',
+		[0xDE]='Ю',[0xDF]='Я',[0xE0]='а',[0xE1]='б',[0xE2]='в',[0xE3]='г',[0xE4]='д',[0xE5]='е',[0xE6]='ж',[0xE7]='з',
+		[0xE8]='и',[0xE9]='й',[0xEA]='к',[0xEB]='л',[0xEC]='м',[0xED]='н',[0xEE]='о',[0xEF]='п',[0xF0]='р',[0xF1]='с',
+		[0xF2]='т',[0xF3]='у',[0xF4]='ф',[0xF5]='х',[0xF6]='ц',[0xF7]='ч',[0xF8]='ш',[0xF9]='щ',[0xFA]='ъ',[0xFB]='ы',
+		[0xFC]='ь',[0xFD]='э',[0xFE]='ю',[0xFF]='я'
+	}
+	local out = {}
+	for i = 1, #str do
+		local b = string.byte(str, i)
+		if b < 128 then
+			out[#out+1] = string.char(b)
+		else
+			out[#out+1] = t[b] or '?'
+		end
+	end
+	return table.concat(out)
+end
+local function escapeProblematicChars(text)
+	text = text:gsub("w", "w​"):gsub("W", "W​")
+	text = text:gsub("u", "u​"):gsub("U", "U​")
+	return text
+end
+local function isAnyOtherKeyPressed(allowedKeys)
+	local keysToCheck = {
+		vk.VK_SHIFT, vk.VK_LSHIFT, vk.VK_RSHIFT, vk.VK_CONTROL, vk.VK_LCONTROL, vk.VK_RCONTROL,
+		vk.VK_MENU, vk.VK_LMENU, vk.VK_RMENU, vk.VK_SPACE, vk.VK_TAB, vk.VK_RETURN, vk.VK_BACK,
+		vk.VK_ESCAPE, vk.VK_LBUTTON, vk.VK_RBUTTON, vk.VK_MBUTTON
+	}
+	for i = 0x30, 0x39 do table.insert(keysToCheck, i) end
+	for i = 0x41, 0x5A do table.insert(keysToCheck, i) end
+	for i = vk.VK_F1, vk.VK_F12 do table.insert(keysToCheck, i) end
+	local allowed = {}
+	for _, k in ipairs(allowedKeys) do 
+		allowed[k] = true 
+	end
+	allowed[vk.VK_SHIFT] = allowed[vk.VK_LSHIFT] or allowed[vk.VK_RSHIFT] or allowed[vk.VK_SHIFT]
+	allowed[vk.VK_CONTROL] = allowed[vk.VK_LCONTROL] or allowed[vk.VK_RCONTROL] or allowed[vk.VK_CONTROL]
+	allowed[vk.VK_MENU] = allowed[vk.VK_LMENU] or allowed[vk.VK_RMENU] or allowed[vk.VK_MENU]
+	for _, key in ipairs(keysToCheck) do
+		if not allowed[key] and isKeyPressed(key) then
+			return true
+		end
+	end
+	return false
+end
+local function formatRPMessage(text)
+	if not text or text == "" then return text end
+	text = text:gsub("^%s+", ""):gsub("%s+$", "")
+	if text == "" then return text end
+	local firstByte = text:byte(1)
+	if firstByte >= 0xE0 and firstByte <= 0xFF then
+		local upperByte = firstByte - 0x20
+		text = string.char(upperByte) .. text:sub(2)
+	elseif firstByte == 0xB8 then
+		text = string.char(0xA8) .. text:sub(2)
+	elseif firstByte and firstByte >= 0x61 and firstByte <= 0x7A then
+		text = firstByte >= 0x61 and firstByte <= 0x7A
+			and string.char(firstByte - 0x20) .. text:sub(2)
+			or text
+	end
+	if not text:match("[%.%!%?]$") then
+		text = text .. "."
+	end
+	return text
+end
+function navigateBufferUp()
+	local bufferData = loadBufferFromFile()
+	local currentAdText = normalizeForBufferCompare(settings.customAd.data.advertisement or "")
+	if bufferNavigationState.lastAdText ~= currentAdText then
+		bufferNavigationState.isNavigating = false
+		bufferNavigationState.currentIndex = 0
+		bufferNavigationState.originalText = nil
+		bufferNavigationState.lastAdText = currentAdText
+	end
+	if not bufferNavigationState.isNavigating then
+		bufferNavigationState.isNavigating = true
+		bufferNavigationState.originalText = ffi.string(settings.customAd.responseText)
+		bufferNavigationState.currentIndex = 0
+	end
+	local found = false
+	for i = bufferNavigationState.currentIndex + 1, #bufferData do
+		local bufferAdText = normalizeForBufferCompare(bufferData[i].advertisement or "")
+		if bufferAdText == currentAdText then
+			local textToSet = bufferData[i].editedText or ""
+			flags.pendingBufferInsert = textToSet
+			flags.inputRecreateFrame = 2
+			bufferNavigationState.currentIndex = i
+			found = true
+			chatMessage(u8:decode('[News Helper] Загружен вариант #' .. i .. ' из буфера'), 0xFFFF00)
+			break
+		end
+	end
+	if not found then
+		bufferNavigationState.currentIndex = 0
+		chatMessage(u8:decode('[News Helper] Больше нет вариантов'), 0xFFFF00)
+	end
+end
+function navigateBufferDown()
+	if bufferNavigationState.isNavigating and bufferNavigationState.originalText then
+		flags.pendingBufferInsert = bufferNavigationState.originalText
+		flags.inputRecreateFrame = 2
+		bufferNavigationState.isNavigating = false
+		bufferNavigationState.currentIndex = 0
+		bufferNavigationState.lastAdText = nil
+		chatMessage(u8:decode('[News Helper] Возвращен оригинальный текст'), 0xFFFF00)
+	end
+end
+function getKeyName(vkCode)
+	if not vkCode then return "Не назначено" end
+	return hotkeyNames[vkCode] or string.format("Key[%d]", vkCode)
+end
+function getHotkeyString(hotkey)
+	if not hotkey or #hotkey == 0 then
+		return "Не назначено"
+	end
+	local parts = {}
+	for _, key in ipairs(hotkey) do
+		table.insert(parts, getKeyName(key))
+	end
+	return table.concat(parts, " + ")
+end
+function getChatIdAllPlayers()
+	chat.idPlayers = {}
+	for i = 0, sampGetMaxPlayerId() do
+		if sampIsPlayerConnected(i) or i == chat.myId then
+			chat.idPlayers[i] = sampGetPlayerNickname(i)
+		end
+	end
+	return chat.idPlayers
+end
+function onReceiveRpc(id, bs)
+	if id == 137 then
+		local playerId = raknetBitStreamReadInt16(bs)
+		raknetBitStreamIgnoreBits(bs, 40)
+		local nickLen = raknetBitStreamReadInt8(bs)
+		local name = raknetBitStreamReadString(bs, nickLen)
+		chat.idPlayers[playerId] = name
+	end
+	if id == 138 then
+		local playerId = raknetBitStreamReadInt16(bs)
+		chat.idPlayers[playerId] = nil
+	end
+end
+function calculateEfirMessagesTabHeight()
+	if not efir.selectedType or not efir.messages[efir.selectedType] then
+		return 500
+	end
+	local baseHeight = 270
+	local messageLineHeight = 60
+	local paddingAndSpacing = 50
+	local categories = getEfirMessageOrder(efir.selectedType)
+	local messageCount = 0
+	if efir.currentSubTab == 1 then
+		messageCount = #categories.start
+	elseif efir.currentSubTab == 2 then
+		messageCount = #categories.additional
+	elseif efir.currentSubTab == 3 then
+		messageCount = #categories.end_messages
+	end
+	local messagesHeight = messageCount * messageLineHeight
+	local maxScrollHeight = 700
+	if messagesHeight > maxScrollHeight then
+		messagesHeight = maxScrollHeight
+	end
+	local totalHeight = baseHeight + messagesHeight + paddingAndSpacing
+	local minHeight = 500
+	local maxHeight = 950
+	if totalHeight < minHeight then
+		totalHeight = minHeight
+	elseif totalHeight > maxHeight then
+		totalHeight = maxHeight
+	end
+	return totalHeight
+end
+function calculateFreeEfirTabHeight()
+	if efir.custom.viewMode == 'square' then
+		return 800
+	end
+	local baseHeight = 180  
+	local lineHeight = 30
+	local paddingAndSpacing = 50
+	local lineCount = 0
+	if efir.custom.selected and efir.custom.lines and #efir.custom.lines > 0 then
+		lineCount = #efir.custom.lines
+	end
+	local addButtonHeight = 40
+	local linesHeight = lineCount * lineHeight
+	local totalHeight = baseHeight + linesHeight + addButtonHeight + paddingAndSpacing
+	local minHeight = 600
+	local maxHeight = 800
+	if totalHeight < minHeight then
+		totalHeight = minHeight
+	elseif totalHeight > maxHeight then
+		totalHeight = maxHeight
+	end
+	return totalHeight
+end
+pcall(ffi.cdef, [[
+	short GetAsyncKeyState(int vKey);
+]])
 function chatMessage(text, color)
 	if not settings.silentMode[0] then
 		sampAddChatMessage(text, color)
@@ -1271,9 +1927,149 @@ function onKeyDown(key, down)
 		return false
 	end
 end
+function onBinderWindowMessage(msg, wparam, lparam)
+	if not binder.keyCapture.active then return end
+	if msg == 0x100 or msg == 0x104 then
+		if wparam == vk.VK_ESCAPE then
+			binder.keyCapture.active = false
+			binder.keyCapture.keys = {}
+			binderEdit.tempHotkey = {}
+			consumeWindowMessage(true, true)
+			return true
+		end
+		local pressedKey = wparam
+		local isExtended = bit.band(lparam, 0x1000000) ~= 0
+		if wparam == vk.VK_SHIFT then
+			local scancode = bit.band(bit.rshift(lparam, 16), 0xFF)
+			pressedKey = (scancode == 0x36) and vk.VK_RSHIFT or vk.VK_LSHIFT
+		elseif wparam == vk.VK_CONTROL then
+			pressedKey = isExtended and vk.VK_RCONTROL or vk.VK_LCONTROL
+		elseif wparam == vk.VK_MENU then
+			pressedKey = isExtended and vk.VK_RMENU or vk.VK_LMENU
+		end
+		local alreadyPressed = false
+		for _, key in ipairs(binder.keyCapture.keys) do
+			if key == pressedKey then
+				alreadyPressed = true
+				break
+			end
+		end
+		if not alreadyPressed then
+			table.insert(binder.keyCapture.keys, pressedKey)
+			binder.keyCapture.lastKeyTime = os.clock()
+		end
+		consumeWindowMessage(true, true)
+		return true
+	elseif msg == 0x101 then
+		if binder.keyCapture.active then
+			lua_thread.create(function()
+				wait(100)
+				if binder.keyCapture.active then
+					local allKeysReleased = true
+					for _, key in ipairs(binder.keyCapture.keys) do
+						if isKeyPressed(key) then
+							allKeysReleased = false
+							break
+						end
+					end
+					if allKeysReleased and #binder.keyCapture.keys > 0 then
+						binderEdit.hotkey = {}
+						for _, key in ipairs(binder.keyCapture.keys) do
+							table.insert(binderEdit.hotkey, key)
+						end
+						binder.keyCapture.active = false
+						binder.keyCapture.keys = {}
+					end
+				end
+			end)
+			consumeWindowMessage(true, true)
+			return true
+		end
+	end
+	return false
+end
+function onRSWindowMessage(msg,wparam,lparam)
+	if rsSettings.isSettingKey then
+		if msg==0x100 or msg==0x104 then
+			if wparam==vk.VK_ESCAPE then
+				rsSettings.isSettingKey=false
+				consumeWindowMessage(true,true)
+				return true
+			end
+			if wparam>=vk.VK_F1 and wparam<=vk.VK_F12 then
+				rsSettings.interactionKey=wparam
+				rsSettings.isSettingKey=false
+				saveRSSettings()
+				consumeWindowMessage(true,true)
+				return true
+			end
+		end
+		consumeWindowMessage(true,true)
+		return true
+	end
+	if windows.playerMenu[0] or windows.rsWindow[0] or windows.rsEditor[0] or windows.rsInput[0] then
+		return false
+	end
+	if msg==0x100 or msg==0x104 then
+		if isKeyDown(vk.VK_RBUTTON) and wparam==rsSettings.interactionKey then
+			if isAnyOtherKeyPressed({vk.VK_RBUTTON,rsSettings.interactionKey}) then
+				consumeWindowMessage(true,true)
+				return true
+			end
+			local result,ped=getCharPlayerIsTargeting(PLAYER_HANDLE)
+			if result then
+				local result2,id=sampGetPlayerIdByCharHandle(ped)
+				if result2 and sampIsPlayerConnected(id) then
+					playerInteraction.targetId=id
+					playerInteraction.targetName=sampGetPlayerNickname(id)
+					windows.playerMenu[0]=true
+					consumeWindowMessage(true,true)
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
 function onWindowMessage(msg, wparam, lparam)
-	if ui.hotkeys.isSettingHelp or ui.hotkeys.isSettingPro or ui.hotkeys.isSettingEdit 
-		or ui.hotkeys.isSettingCustom or efir.control.isSettingPauseKey or ui.hotkeys.isSettingSettings then
+	if onBinderWindowMessage(msg, wparam, lparam) then
+		return false
+	end	
+	if onRSWindowMessage(msg, wparam, lparam) then
+		return false
+	end
+	for i, bind in ipairs(binder.list) do
+		if bind.blockKey and bind.hotkey and #bind.hotkey > 0 then
+			if msg == 0x100 or msg == 0x104 then
+				local pressedKey = wparam
+				local isExtended = bit.band(lparam, 0x1000000) ~= 0
+				if wparam == vk.VK_SHIFT then
+					local scancode = bit.band(bit.rshift(lparam, 16), 0xFF)
+					pressedKey = (scancode == 0x36) and vk.VK_RSHIFT or vk.VK_LSHIFT
+				elseif wparam == vk.VK_CONTROL then
+					pressedKey = isExtended and vk.VK_RCONTROL or vk.VK_LCONTROL
+				elseif wparam == vk.VK_MENU then
+					pressedKey = isExtended and vk.VK_RMENU or vk.VK_LMENU
+				end
+				for _, key in ipairs(bind.hotkey) do
+					if key == pressedKey then
+						local allPressed = true
+						for _, k in ipairs(bind.hotkey) do
+							if not isKeyPressed(k) then
+								allPressed = false
+								break
+							end
+						end
+						if allPressed then
+							consumeWindowMessage(true, true)
+							return false
+						end
+					end
+				end
+			end
+		end
+	end
+	if ui.hotkeys.isSettingHelp or ui.hotkeys.isSettingPro or ui.hotkeys.isSettingEdit or ui.hotkeys.isSettingCustom or efir.control.isSettingPauseKey or ui.hotkeys.isSettingSettings then
 		if msg == 0x100 then
 			if wparam == vk.VK_ESCAPE then
 				ui.hotkeys.isSettingHelp = false
@@ -1339,24 +2135,17 @@ function onWindowMessage(msg, wparam, lparam)
 					[vk.VK_F1] = true, [vk.VK_F2] = true, [vk.VK_F3] = true, [vk.VK_F4] = true,
 					[vk.VK_F5] = true, [vk.VK_F6] = true, [vk.VK_F7] = true, [vk.VK_F8] = true,
 					[vk.VK_F9] = true, [vk.VK_F10] = true, [vk.VK_F11] = true, [vk.VK_F12] = true,
-					[vk.VK_LSHIFT] = true,
-					[vk.VK_RSHIFT] = true,
-					[vk.VK_LCONTROL] = true,
-					[vk.VK_RCONTROL] = true,
-					[vk.VK_LMENU] = true,
-					[vk.VK_RMENU] = true,
-					[vk.VK_TAB] = true,
-					[vk.VK_SPACE] = true,
-					[vk.VK_PAUSE] = true, 
-					[vk.VK_CAPITAL] = true,
-					[vk.VK_PRIOR] = true, [vk.VK_NEXT] = true,
-					[vk.VK_END] = true, [vk.VK_HOME] = true,
-					[vk.VK_INSERT] = true, [vk.VK_DELETE] = true,
-					[vk.VK_NUMPAD0] = true, [vk.VK_NUMPAD1] = true, [vk.VK_NUMPAD2] = true,
-					[vk.VK_NUMPAD3] = true, [vk.VK_NUMPAD4] = true, [vk.VK_NUMPAD5] = true,
-					[vk.VK_NUMPAD6] = true, [vk.VK_NUMPAD7] = true, [vk.VK_NUMPAD8] = true,
-					[vk.VK_NUMPAD9] = true, [vk.VK_MULTIPLY] = true, [vk.VK_ADD] = true,
-					[vk.VK_SUBTRACT] = true, [vk.VK_DECIMAL] = true, [vk.VK_DIVIDE] = true,
+					[vk.VK_LSHIFT] = true, [vk.VK_RSHIFT] = true, [vk.VK_LCONTROL] = true,
+					[vk.VK_RCONTROL] = true, [vk.VK_LMENU] = true, [vk.VK_RMENU] = true,
+					[vk.VK_TAB] = true, [vk.VK_SPACE] = true, [vk.VK_PAUSE] = true,
+					[vk.VK_CAPITAL] = true, [vk.VK_PRIOR] = true, [vk.VK_NEXT] = true,
+					[vk.VK_END] = true, [vk.VK_HOME] = true, [vk.VK_INSERT] = true,
+					[vk.VK_DELETE] = true, [vk.VK_NUMPAD0] = true, [vk.VK_NUMPAD1] = true,
+					[vk.VK_NUMPAD2] = true, [vk.VK_NUMPAD3] = true, [vk.VK_NUMPAD4] = true,
+					[vk.VK_NUMPAD5] = true, [vk.VK_NUMPAD6] = true, [vk.VK_NUMPAD7] = true,
+					[vk.VK_NUMPAD8] = true, [vk.VK_NUMPAD9] = true, [vk.VK_MULTIPLY] = true,
+					[vk.VK_ADD] = true, [vk.VK_SUBTRACT] = true, [vk.VK_DECIMAL] = true,
+					[vk.VK_DIVIDE] = true,
 				}
 				if allowedKeys[actualKey] then
 					settings.starJumpKey = actualKey
@@ -1378,6 +2167,11 @@ function onWindowMessage(msg, wparam, lparam)
 				end
 			end
 			if allPressed then
+				if efir.auto.active and not efir.auto.paused and not efir.auto.pausedDuringQuestions and not efir.auto.pausedDuringStartup then
+					chatMessage(u8:decode('[News Helper] Нельзя открыть настройки во время активного автоэфира!'), 0xFF0000)
+					consumeWindowMessage(true, true)
+					return false
+				end
 				states.settingsKeysPressed[wparam] = true
 				consumeWindowMessage(true, true)
 				return false
@@ -1388,6 +2182,11 @@ function onWindowMessage(msg, wparam, lparam)
 			local wasPressed = states.settingsKeysPressed[wparam]
 			states.settingsKeysPressed = {}
 			if wasPressed then
+				if efir.auto.active and not efir.auto.paused and not efir.auto.pausedDuringQuestions and not efir.auto.pausedDuringStartup then
+					chatMessage(u8:decode('[News Helper] Нельзя открыть настройки во время активного автоэфира!'), 0xFF0000)
+					consumeWindowMessage(true, true)
+					return false
+				end
 				local allStillPressed = true
 				for _, key in ipairs(ui.hotkeys.settings) do
 					if not isKeyPressed(key) then
@@ -1396,8 +2195,7 @@ function onWindowMessage(msg, wparam, lparam)
 					end
 				end
 				if not allStillPressed or #ui.hotkeys.settings == 1 then
-					if not windows.help[0] and not windows.editor[0] and 
-						not windows.editCategory[0] and not windows.editBind[0] then
+					if not windows.help[0] and not windows.editor[0] and not windows.editCategory[0] and not windows.editBind[0] then
 						windows.mainSettings[0] = not windows.mainSettings[0]
 						consumeWindowMessage(true, true)
 					end
@@ -1467,9 +2265,9 @@ function onWindowMessage(msg, wparam, lparam)
 				return false
 			end
 		elseif msg == 0x101 then
-			if wparam == vk.VK_UP then 
+			if wparam == vk.VK_UP then
 				states.upKeyPressed = false
-			elseif wparam == vk.VK_DOWN then 
+			elseif wparam == vk.VK_DOWN then
 				states.downKeyPressed = false
 			end
 		end
@@ -1492,6 +2290,9 @@ function onWindowMessage(msg, wparam, lparam)
 			elseif windows.colorSettings[0] then
 				windows.colorSettings[0] = false
 				windowClosed = true
+			elseif bulkInput.active then
+				bulkInput.active = false
+				windowClosed = true
 			elseif windows.editor[0] then
 				windows.editor[0] = false
 				windowClosed = true
@@ -1508,6 +2309,18 @@ function onWindowMessage(msg, wparam, lparam)
 			elseif windows.mainSettings[0] then
 				windows.mainSettings[0] = false
 				windowClosed = true
+			elseif windows.rsWindow[0] then
+				windows.rsWindow[0] = false
+				windowClosed = true
+			elseif windows.rsEditor[0] then
+				windows.rsEditor[0] = false
+				windowClosed = true
+			elseif windows.rsInput[0] then
+				windows.rsInput[0] = false
+				windowClosed = true
+			elseif windows.playerMenu[0] then
+				windows.playerMenu[0] = false
+				windowClosed = true
 			elseif windows.customAd[0] then
 				closeCustomAd(false)
 				sampSendDialogResponse(698, 0, 0, "")
@@ -1516,6 +2329,26 @@ function onWindowMessage(msg, wparam, lparam)
 			if windowClosed then
 				resetIO()
 				consumeWindowMessage(true, true)
+			end
+		end
+	end
+	if windows.customAd[0] and flags.inputFieldActive and (msg == 0x100 or msg == 0x101 or msg == 0x104) then
+		if wparam == vk.VK_TAB then
+			local tabUsedInHotkey = false
+			for i, bind in ipairs(binder.list) do
+				if bind.blockKey and bind.hotkey and #bind.hotkey > 0 then
+					for _, key in ipairs(bind.hotkey) do
+						if key == vk.VK_TAB then
+							tabUsedInHotkey = true
+							break
+						end
+					end
+					if tabUsedInHotkey then break end
+				end
+			end
+			if not tabUsedInHotkey then
+				consumeWindowMessage(true, true)
+				return true
 			end
 		end
 	end
@@ -1545,9 +2378,6 @@ function renderIntervalControl(efirType, label)
 	local digitCount = string.len(tostring(intervalValue))
 	local inputWidth = math.max(60, digitCount * 10 + 20)
 	imgui.PushItemWidth(inputWidth)
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	imgui.SameLine()
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
@@ -1556,7 +2386,6 @@ function renderIntervalControl(efirType, label)
 		efir.intervals[efirType][0] = math.max(1000, efir.intervals[efirType][0] - 100)
 		saveConfig()
 	end
-	imgui.PopStyleColor(3)
 	imgui.SameLine()
 	if imgui.InputInt('##Interval' .. efirType, efir.intervals[efirType], 0, 0) then
 		if efir.intervals[efirType][0] < 1000 then efir.intervals[efirType][0] = 1000 end
@@ -1579,7 +2408,6 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 	local messages = efir.messages[efirType]
 	local item = settings.colors.itemButtons
 	local bg = settings.colors.background
-	local buttonWidth = 120 
 	imgui.TextColored(imgui.ImVec4(1, 1, 0, 1), 'Как добавить новое сообщение:')
 	imgui.TextWrapped('1. Нажмите "Добавить"')
 	imgui.TextWrapped('2. Введите ключ (например: msg9, ball1.2, end6)')
@@ -1589,36 +2417,41 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 	imgui.Spacing()
 	imgui.Separator()
 	imgui.Spacing()
-	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.8, 0.2, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.9, 0.3, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.1, 0.7, 0.1, 1))
-	if fa_font then imgui.PushFont(fa_font) end
-	if imgui.Button(fa('circle_plus') .. ' Добавить новое##' .. categoryName, imgui.ImVec2(120, 25)) then
-	if fa_font then imgui.PopFont() end
-		imgui.OpenPopup('AddMessage##' .. categoryName)
+	if categoryName ~= "баллы" then
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.8, 0.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.9, 0.3, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.1, 0.7, 0.1, 1))
+		if fa_font then imgui.PushFont(fa_font) end
+		if imgui.Button(fa('circle_plus') .. ' Добавить новое##' .. categoryName, imgui.ImVec2(120, 25)) then
+			if fa_font then imgui.PopFont() end
+			imgui.OpenPopup('AddMessage##' .. categoryName)
+		end
+		if fa_font then imgui.PopFont() end
+		imgui.PopStyleColor(3)
+		imgui.SameLine()
 	end
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.4, 0.2, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.5, 0.3, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.3, 0.1, 1))
+	if fa_font then imgui.PushFont(fa_font) end
+	if imgui.Button(fa('arrow_rotate_right') .. ' Сбросить эфир##' .. categoryName, imgui.ImVec2(120, 25)) then
+		if fa_font then imgui.PopFont() end
+		resetEfirMessagesToDefault(efir.selectedType)
+		chatMessage(u8:decode('[News Helper] Эфир "' .. efir.selectedType .. '" сброшен!'), 0x00FF00)
+	end
+	if fa_font then imgui.PopFont() end
 	imgui.PopStyleColor(3)
 	imgui.SameLine()
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.6, 0.2, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.7, 0.3, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.5, 0.1, 1))
 	if fa_font then imgui.PushFont(fa_font) end
-	if imgui.Button(fa('arrow_rotate_right') .. ' Сбросить эфир##' .. categoryName, imgui.ImVec2(120, 25)) then
-	if fa_font then imgui.PopFont() end
-		resetEfirMessagesToDefault(efir.selectedType)
-		chatMessage(u8:decode('[News Helper] Эфир "' .. efir.selectedType .. '" сброшен!'), 0x00FF00)
-	end
-	imgui.PopStyleColor(3)
-	imgui.SameLine()
-	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.8, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.9, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.1, 0.7, 1))
-	if fa_font then imgui.PushFont(fa_font) end
 	if imgui.Button(fa('floppy_disk') .. ' Сохранить##' .. categoryName, imgui.ImVec2(120, 25)) then
-	if fa_font then imgui.PopFont() end
-		saveEfirMessagesToFile() 
-		chatMessage(u8:decode('[News Helper] Настройки сохранены!'), 0x00FF00)
+		if fa_font then imgui.PopFont() end
+		saveEfirMessagesToFile()
+		chatMessage(u8:decode('[News Helper] Эфир сохранен!'), 0x00FF00)
 	end
+	if fa_font then imgui.PopFont() end
 	imgui.PopStyleColor(3)
 	imgui.Spacing()
 	imgui.Separator()
@@ -1628,18 +2461,13 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 		if messages[msgKey] then
 			local displayName = getEfirMessageDisplayName(msgKey, efirType)
 			imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0.8, 1, 0.8, 1))
-			imgui.Text(displayName .. ':')
+			imgui.Text(displayName .. ' [' .. msgKey .. ']:')
 			imgui.PopStyleColor()
 			imgui.PushItemWidth(-40)
 			local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
 			local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
 			local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
-			imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-			imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-			imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
-			if imgui.InputText('##' .. msgKey .. efirType, messages[msgKey], ffi.sizeof(messages[msgKey])) then
-			end
-			imgui.PopStyleColor(3)
+			imgui.InputText('##' .. msgKey .. efirType, messages[msgKey], ffi.sizeof(messages[msgKey]))
 			imgui.PopItemWidth()
 			imgui.SameLine()
 			imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.2, 1))
@@ -1676,7 +2504,7 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 		imgui.Text('Добавить новое сообщение:')
 		imgui.Separator()
 		local suggestedKey = ""
-		if categoryName == "начальные" then
+		if categoryName == "начать" then
 			local maxMsgNum = 0
 			for msgKey, _ in pairs(messages) do
 				local num = msgKey:match("^msg(%d+)$")
@@ -1685,7 +2513,7 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 				end
 			end
 			suggestedKey = "msg" .. (maxMsgNum + 1)
-		elseif categoryName == "финальные" then
+		elseif categoryName == "завершить" then
 			local maxEndNum = 0
 			for msgKey, _ in pairs(messages) do
 				local num = msgKey:match("^end(%d+)$")
@@ -1694,13 +2522,22 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 				end
 			end
 			suggestedKey = "end" .. (maxEndNum + 1)
+		elseif categoryName == "стоп" then
+			local maxStopNum = 0
+			for msgKey, _ in pairs(messages) do
+				local num = msgKey:match("^stop(%d+)$")
+				if num then
+					maxStopNum = math.max(maxStopNum, tonumber(num))
+				end
+			end
+			suggestedKey = "stop" .. (maxStopNum + 1)
 		else
 			suggestedKey = "ball1.2"
 		end
 		imgui.TextColored(imgui.ImVec4(1, 1, 0, 1), 'Примеры ключей:')
-		if categoryName == "начальные" then
+		if categoryName == "начать" then
 			imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'msg9, msg10 (для основных сообщений)')
-		elseif categoryName == "финальные" then 
+		elseif categoryName == "завершить" then
 			imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'end6, end7 (для завершающих)')
 		else
 			imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'ball1.2, winner4 (для вариаций)')
@@ -1712,18 +2549,11 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 		local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
 		local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
 		local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 		local keyEnterPressed = imgui.InputText('##NewMsgKey', helpers.newMessageKey, 64, imgui.InputTextFlags.EnterReturnsTrue)
-		imgui.PopStyleColor(3)
 		imgui.PopItemWidth()
 		imgui.Spacing()
 		imgui.Text('Отображаемое имя:')
 		imgui.PushItemWidth(400)
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 		local nameEnterPressed = imgui.InputText('##NewMsgDisplayName', helpers.newMessageDisplayName, 128, imgui.InputTextFlags.EnterReturnsTrue)
 		imgui.PopStyleColor(3)
 		imgui.PopItemWidth()
@@ -1732,9 +2562,6 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 		end
 		imgui.Spacing()
 		imgui.Text('Текст сообщения:')
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 		imgui.InputTextMultiline('##NewMsgText', helpers.newMessageText, 512, imgui.ImVec2(400, 100))
 		imgui.PopStyleColor(3)
 		imgui.Separator()
@@ -1742,19 +2569,20 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0] * 1.2, item[1] * 1.2, item[2] * 1.2, 1))
 		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0] * 1.4, item[1] * 1.4, item[2] * 1.4, 1))
 		if fa_font then imgui.PushFont(fa_font) end
-		if imgui.Button(fa('xmark') .. ' Отмена (ESC)', imgui.ImVec2(buttonWidth, 30)) then
-		if fa_font then imgui.PopFont() end
+		if imgui.Button(fa('xmark') .. ' Отмена (ESC)', imgui.ImVec2(120, 30)) then
+			if fa_font then imgui.PopFont() end
 			imgui.CloseCurrentPopup()
 			helpers.newMessageKey = nil
 			helpers.newMessageText = nil
 			helpers.newMessageDisplayName = nil
 		end
+		if fa_font then imgui.PopFont() end
 		imgui.PopStyleColor(3)
 		imgui.SameLine()
 		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0] * 1.2, item[1] * 1.2, item[2] * 1.2, 1))
 		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0] * 1.4, item[1] * 1.4, item[2] * 1.4, 1))
-		local shouldAdd = imgui.Button('Добавить Enter ' .. fa('arrow_turn_down_left'), imgui.ImVec2(buttonWidth, 30)) 
+		local shouldAdd = imgui.Button('Добавить Enter ' .. fa('arrow_turn_down_left'), imgui.ImVec2(120, 30))
 		if shouldAdd then
 			local key = ffi.string(helpers.newMessageKey)
 			local text = ffi.string(helpers.newMessageText)
@@ -1786,6 +2614,28 @@ function renderEfirMessageCategory(efirType, messageKeys, categoryName)
 		imgui.EndPopup()
 	end
 	imgui.PopStyleColor(3)
+end
+function queueAddBall(name)
+	table.insert(chat.scoreUpdateQueue, {action = "add", name = name})
+end
+function queueClearScore()
+	table.insert(chat.scoreUpdateQueue, {action = "clear"})
+end
+function processScoreQueue()
+	if #chat.scoreUpdateQueue == 0 then return end
+	for _, update in ipairs(chat.scoreUpdateQueue) do
+		if update.action == "add" then
+			if efir.counter[update.name] then
+				efir.counter[update.name] = efir.counter[update.name] + 1
+			else
+				efir.counter[update.name] = 1
+			end
+		elseif update.action == "clear" then
+			efir.counter = {}
+			efir.lastBallVariant = {}
+		end
+	end
+	chat.scoreUpdateQueue = {}
 end
 function renderEfirMessagesEditor()
 	imgui.Text('Редактирование сообщений для эфиров:')
@@ -1842,19 +2692,29 @@ function renderEfirMessagesEditor()
 				renderEfirMessageCategory(efir.selectedType, order.start, "начать")
 				imgui.EndTabItem()
 			end
-			if #order.additional > 0 then
-				if imgui.BeginTabItem('Баллы и награды') then
-					efir.currentSubTab = 2
-					tabWindowSizes[7].y = calculateEfirMessagesTabHeight()
-					renderEfirMessageCategory(efir.selectedType, order.additional, "баллы")
-					imgui.EndTabItem()
+			if efir.selectedType ~= 'sobes' then
+				if #order.additional > 0 then
+					if imgui.BeginTabItem('Баллы и награды') then
+						efir.currentSubTab = 2
+						tabWindowSizes[7].y = calculateEfirMessagesTabHeight()
+						renderEfirMessageCategory(efir.selectedType, order.additional, "баллы")
+						imgui.EndTabItem()
+					end
 				end
 			end
-			if imgui.BeginTabItem('Завершить эфир') then
-				efir.currentSubTab = 3
-				tabWindowSizes[7].y = calculateEfirMessagesTabHeight()
-				renderEfirMessageCategory(efir.selectedType, order.end_messages, "завершить")
-				imgui.EndTabItem()
+			if efir.selectedType ~= 'sobes' then
+				if imgui.BeginTabItem('Завершить эфир') then
+					efir.currentSubTab = 3
+					tabWindowSizes[7].y = calculateEfirMessagesTabHeight()
+					local endOnlyMessages = {}
+					for _, key in ipairs(order.end_messages) do
+						if not key:match("^stop%d+$") then
+							table.insert(endOnlyMessages, key)
+						end
+					end
+					renderEfirMessageCategory(efir.selectedType, endOnlyMessages, "завершить")
+					imgui.EndTabItem()
+				end
 			end
 			imgui.EndTabBar()
 		end
@@ -1894,9 +2754,6 @@ function renderSquareMode()
 	local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
 	local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
 	imgui.Text('Введите текст (каждая строка будет отправлена отдельно):')
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	local textAreaHeight = imgui.GetWindowHeight() - 120
 	imgui.InputTextMultiline('##SquareTextInput', efir.custom.squareText, 
 		ffi.sizeof(efir.custom.squareText), 
@@ -2011,9 +2868,6 @@ function renderFreeEfirTab()
 		local digitCount = string.len(tostring(intervalValue))
 		local inputWidth = math.max(60, digitCount * 10 + 20)
 		imgui.PushItemWidth(inputWidth)
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 		imgui.SameLine()
 		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0] * 1.2, item[1] * 1.2, item[2] * 1.2, 1))
@@ -2022,7 +2876,6 @@ function renderFreeEfirTab()
 			efir.custom.sendInterval[0] = math.max(100, efir.custom.sendInterval[0] - 100)
 			saveConfig()
 		end
-		imgui.PopStyleColor(3)
 		imgui.SameLine()
 		if imgui.InputInt('##SendInterval', efir.custom.sendInterval, 0, 0) then
 			if efir.custom.sendInterval[0] < 100 then
@@ -2229,15 +3082,11 @@ function renderCustomEfirEditor()
 			imgui.PopStyleColor(3)
 			imgui.SameLine()
 			imgui.PushItemWidth(-55)
-			imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-			imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-			imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 			if flags.focusLineIndex == i then
 				imgui.SetKeyboardFocusHere()
 				flags.focusLineIndex = nil
 			end
 			local enterPressed = imgui.InputText('##text' .. i, line.text, ffi.sizeof(line.text), imgui.InputTextFlags.EnterReturnsTrue)
-			imgui.PopStyleColor(3)
 			imgui.PopItemWidth()
 			if enterPressed then
 				table.insert(efir.custom.lines, i + 1, { text = imgui.new.char[512]("") })
@@ -2402,19 +3251,11 @@ function renderAddCustomEfirPopup()
 		imgui.Separator()
 		imgui.Text('Название эфира:')
 		imgui.PushItemWidth(300)
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 		local nameEnter = imgui.InputText('##EfirName', efir.custom.newName, 128, imgui.InputTextFlags.EnterReturnsTrue)
-		imgui.PopStyleColor(3)
 		imgui.PopItemWidth()
 		imgui.Text('Ключ (латиницей):')
 		imgui.PushItemWidth(200)
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 		local keyEnter = imgui.InputText('##EfirKey', efir.custom.newKey, 64, imgui.InputTextFlags.EnterReturnsTrue)
-		imgui.PopStyleColor(3)
 		imgui.PopItemWidth()
 		imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Например: math, interview, custom1')
 		imgui.Separator()
@@ -2470,141 +3311,55 @@ function renderAddCustomEfirPopup()
 	end
 	imgui.PopStyleColor(3)
 end
-function renderAddCustomLinePopup()
-	local bg = settings.colors.background
-	local item = settings.colors.itemButtons
-	local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
-	local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
-	local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
-	imgui.PushStyleColor(imgui.Col.PopupBg, imgui.ImVec4(bg[0], bg[1], bg[2], 0.98))
-	imgui.PushStyleColor(imgui.Col.TitleBg, imgui.ImVec4(item[0], item[1], item[2], 1))
-	imgui.PushStyleColor(imgui.Col.TitleBgActive, imgui.ImVec4(item[0] * 1.1, item[1] * 1.1, item[2] * 1.1, 1))
-	if imgui.BeginPopupModal('AddCustomLine', nil, imgui.WindowFlags.AlwaysAutoResize) then
-		if not newLineName then
-			newLineName = imgui.new.char[128]()
-			newLineText = imgui.new.char[512]()
-		end
-		if imgui.IsKeyPressed(imgui.Key.Escape) then
-			imgui.CloseCurrentPopup()
-			newLineName = nil
-			newLineText = nil
-		end
-		imgui.Text('Добавить новую строку:')
-		imgui.Separator()
-		imgui.Text('Название:')
-		imgui.PushItemWidth(300)
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
-		local nameEnter = imgui.InputText('##LineName', newLineName, 128, imgui.InputTextFlags.EnterReturnsTrue)
-		imgui.PopStyleColor(3)
-		imgui.PopItemWidth()
-		imgui.Text('Текст (можно оставить пустым):')
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
-		imgui.InputTextMultiline('##LineText', newLineText, 512, imgui.ImVec2(400, 100))
-		imgui.PopStyleColor(3)
-		imgui.Separator()
-		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
-		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0] * 1.2, item[1] * 1.2, item[2] * 1.2, 1))
-		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0] * 1.4, item[1] * 1.4, item[2] * 1.4, 1))
-		if fa_font then imgui.PushFont(fa_font) end
-		if imgui.Button(fa('xmark') .. ' Отмена', imgui.ImVec2(buttonWidth, 30)) then
-		if fa_font then imgui.PopFont() end
-			imgui.CloseCurrentPopup()
-			newLineName = nil
-			newLineText = nil
-		end
-		imgui.PopStyleColor(3)
-		imgui.SameLine()
-		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
-		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0] * 1.2, item[1] * 1.2, item[2] * 1.2, 1))
-		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0] * 1.4, item[1] * 1.4, item[2] * 1.4, 1))
-		local shouldAdd = false
-		if fa_font then imgui.PushFont(fa_font) end
-		if imgui.Button(fa('circle_plus') .. ' Добавить', imgui.ImVec2(150, 30)) then
-			shouldAdd = true
-		end
-		if fa_font then imgui.PopFont() end
-		shouldAdd = shouldAdd or nameEnter
-		if shouldAdd then
-			local name = ffi.string(efir.custom.newLineName)
-			local text = ffi.string(efir.custom.newLineText)
-			if name ~= '' then
-				if not efir.custom.lines then
-					efir.custom.lines = {}
-				end
-				table.insert(efir.custom.lines, {
-					name = name,
-					text = imgui.new.char[512](text)
-				})
-				saveCustomEfirs()
-				chatMessage(u8:decode('[News Helper] Строка добавлена!'), 0x00FF00)
-				imgui.CloseCurrentPopup()
-				newLineName = nil
-				newLineText = nil
-			else
-				chatMessage(u8:decode('[News Helper] Введите название!'), 0xFF0000)
-			end
-		end
-		imgui.PopStyleColor(3)
-	end
-end
 function getEfirMessageOrder(efirType)
-	local orders = {
-		math = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg6', 'msg7', 'msg8', 'first', 'next'},
-			additional = {'ball1', 'ball1.2', 'ball2', 'ball2.2', 'ball5', 'ball5.2', 'winner1', 'winner2', 'winner3'},
-			end_messages = {'end1', 'end2', 'end3', 'end4', 'end5'}
-		},
-		country = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg6', 'msg7', 'first', 'next'},
-			additional = {'ball1', 'ball1.2', 'ball2', 'ball2.2', 'ball5', 'ball5.2', 'winner1', 'winner2', 'winner3'},
-			end_messages = {'end1', 'end2', 'end3', 'end4', 'end5'}
-		},
-		himia = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg6', 'msg7', 'first', 'next'},
-			additional = {'ball1', 'ball1.2', 'ball2', 'ball2.2', 'ball5', 'ball5.2', 'winner1', 'winner2', 'winner3'},
-			end_messages = {'end1', 'end2', 'end3', 'end4', 'end5'}
-		},
-		zerkalo = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg6', 'msg7', 'first', 'next'},
-			additional = {'ball1', 'ball1.2', 'ball2', 'ball2.2', 'ball5', 'ball5.2', 'winner1', 'winner2', 'winner3'},
-			end_messages = {'end1', 'end2', 'end3', 'end4', 'end5'}
-		},
-		annagramm = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg6', 'msg7', 'first', 'next'},
-			additional = {'ball1', 'ball1.2', 'ball2', 'ball2.2', 'ball5', 'ball5.2', 'winner1', 'winner2', 'winner3'},
-			end_messages = {'end1', 'end2', 'end3', 'end4', 'end5'}
-		},
-		zagadki = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg6', 'msg7', 'first', 'next'},
-			additional = {'ball1', 'ball1.2', 'ball2', 'ball2.2', 'ball5', 'ball5.2', 'winner1', 'winner2', 'winner3'},
-			end_messages = {'end1', 'end2', 'end3', 'end4', 'end5'}
-		},
-		sinonim = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg5_2', 'msg6', 'msg7', 'first', 'next'},
-			additional = {'ball1', 'ball1.2', 'ball2', 'ball2.2', 'ball5', 'ball5.2', 'winner1', 'winner2', 'winner3'},
-			end_messages = {'end1', 'end2', 'end3', 'end4', 'end5'}
-		},
-		inter = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'introduce', 'introduce2', 'question1', 'question2', 'question3', 'question4'},
-			additional = {},
-			end_messages = {'end1', 'end2', 'end3', 'end4', 'end5'}
-		},
-		reklama = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5'},
-			additional = {},
-			end_messages = {'end1', 'end2', 'end3', 'end4'}
-		},
-		sobes = {
-			start = {'msg1', 'msg2', 'msg3', 'msg4', 'msg5', 'msg6', 'msg7', 'msg8', 'msg9', 'msg10', 'msg11', 'msg12', 'msg13', 'msg14'},
-			additional = {},
-			end_messages = {'end1', 'end2', 'end3', 'end4', 'end5', 'stop1', 'stop2', 'stop3', 'stop4', 'stop5', 'stop6', 'stop7', 'stop8', 'stop9', 'stop10'}
-		}
+	if not efir.messages[efirType] then
+		return {start = {}, additional = {}, end_messages = {}}
+	end
+	local messages = efir.messages[efirType]
+	local start = {}
+	local additional = {}
+	local end_messages = {}
+	for key, _ in pairs(messages) do
+		if key:match("^msg%d+$") then
+			table.insert(start, key)
+		elseif key == "first" or key == "next" then
+			table.insert(start, key)
+		elseif key:match("^end%d+$") then
+			table.insert(end_messages, key)
+		else
+			table.insert(additional, key)
+		end
+	end
+	local function compareKeys(a, b)
+		local numA = tonumber(a:match("%d+"))
+		local numB = tonumber(b:match("%d+"))
+		if numA and numB then
+			return numA < numB
+		end
+		return a < b
+	end
+	table.sort(start, compareKeys)
+	table.sort(additional, compareKeys)
+	table.sort(end_messages, compareKeys)
+	local msgKeys = {}
+	local firstKey = nil
+	local nextKey = nil
+	for _, key in ipairs(start) do
+		if key == "first" then
+			firstKey = key
+		elseif key == "next" then
+			nextKey = key
+		else
+			table.insert(msgKeys, key)
+		end
+	end
+	if firstKey then table.insert(msgKeys, firstKey) end
+	if nextKey then table.insert(msgKeys, nextKey) end
+	return {
+		start = msgKeys,
+		additional = additional,
+		end_messages = end_messages
 	}
-	return orders[efirType] or {start = {}, additional = {}, end_messages = {}}
 end
 function getEfirMessageDisplayName(msgKey, efirType)
 	if efir.messageDisplayNames and efir.messageDisplayNames[efirType] and efir.messageDisplayNames[efirType][msgKey] then
@@ -2783,12 +3538,18 @@ function getMyRankFromMembers()
 	local myNick = sampGetPlayerNickname(myId)
 	if not myNick or myNick == "" then return nil end
 	local function normalize(str)
-		return str:gsub("_", " "):gsub("%[PC%]", ""):gsub("%[M%]", ""):gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1"):lower()
+		str = str:gsub("%[PC%]", ""):gsub("%[M%]", "")
+		str = str:gsub("%[%d+%]", "")
+		str = str:gsub("^%s*(.-)%s*$", "%1")
+		str = str:lower()
+		return str
 	end
 	local cleanMyNick = normalize(myNick)
-	if not data.membersList or #data.membersList == 0 then return nil end
+	if not data.membersList or #data.membersList == 0 then
+		return nil
+	end
 	for i, member in ipairs(data.membersList) do
-		if type(member.name) == "string" and type(member.position) == "string" then
+		if type(member.name) == "string" then
 			local cleanMemberName = normalize(member.name)
 			if cleanMemberName == cleanMyNick then
 				local pos = member.position:match("^(.-)%s*%[") or member.position
@@ -2815,6 +3576,7 @@ function initUserVariables()
 end
 function safeAutoDetect()
 	if not isSampAvailable() or not sampIsLocalPlayerSpawned() then return end
+	if isDevMode then return end
 	local translatedNick = getPlayerNickTranslated()
 	if translatedNick ~= "" and (not data.mainIni.config.c_nick or data.mainIni.config.c_nick == "") then
 		data.mainIni.config.c_nick = translatedNick
@@ -2832,81 +3594,28 @@ function checkUserData()
 	end
 	return false
 end
-local function searchInText_optimized(searchQuery, targetText, searchText)
-	if not searchQuery or searchQuery == '' then return false end
-	local cache_key = searchQuery .. "|" .. (targetText or "") .. "|" .. (searchText or "")
-	if search_cache[cache_key] ~= nil then
-		return search_cache[cache_key]
-	end
-	local q = searchQuery:gsub("[%s\r\n]+", " "):gsub("^%s+", ""):gsub("%s+$", "")
-	local qnorm = lower_utf8_optimized(q)
-	local altRu = switch_layout(qnorm, "ru")
-	local altEn = switch_layout(qnorm, "en")
-	local queryAlt = (altRu ~= qnorm) and altRu or altEn
-	local result = false
-	if targetText then
-		local tnorm = lower_utf8_optimized(targetText)
-		if tnorm:find(qnorm, 1, true) or tnorm:find(queryAlt, 1, true) then 
-			result = true
-		end
-	end
-	if not result and searchText then
-		local snorm = lower_utf8_optimized(searchText)
-		if snorm:find(qnorm, 1, true) or snorm:find(queryAlt, 1, true) then 
-			result = true
-		end
-	end
-	if #search_cache > 5000 then
-		search_cache = {}
-	end
-	search_cache[cache_key] = result
-	return result
-end
-local function updateSearchResults(query)
-	if query == ui.search.lastQuery and ui.search.resultsValid then
-		return
-	end
-	ui.search.cachedResults = {}
-	ui.search.lastQuery = query
-	for i = 1, #data.newsHelpBind do
-		local category = data.newsHelpBind[i]
-		local matchingItems = {}
-		local isBufferCategory = category and category[1] == settings.bufferCategoryName
-		if query == "" then
-			for j = 2, #category do
-				table.insert(matchingItems, j)
-			end
-			ui.search.cachedResults[i] = matchingItems
-		else
-			for j = 2, #category do 
-				local bind = category[j] or {}
-				local bindName = bind[1] or ''
-				local bindText = bind[2] or ''
-				local bindAuthor = bind[3] or ''
-				if searchInText_optimized(query, bindName) or 
-					searchInText_optimized(query, bindText) or
-					searchInText_optimized(query, bindAuthor) then
-					table.insert(matchingItems, j)
-				end
-			end
-			if #matchingItems > 0 then
-				ui.search.cachedResults[i] = matchingItems
-			end
-		end
-	end
-	ui.search.resultsValid = true
-end
 function resetEfirMessagesToDefault(efirType)
 	if efirType == 'all' then
 		local allTypes = {'math', 'country', 'himia', 'zerkalo', 'annagramm', 'zagadki', 'sinonim', 'inter', 'reklama', 'sobes'}
 		for _, type in ipairs(allTypes) do
 			resetEfirMessagesToDefault(type)
 		end
+		saveEfirMessagesToFile()
 		chatMessage(u8:decode('[News Helper] Все эфиры сброшены к дефолтным значениям'), 0x00FF00)
 		return
 	end
 	if not efir.messages then
 		efir.messages = {}
+	end
+	if efir.messages[efirType] then
+		for key, _ in pairs(efir.messages[efirType]) do
+			efir.messages[efirType][key] = nil
+		end
+	else
+		efir.messages[efirType] = {}
+	end
+	if efir.messageDisplayNames and efir.messageDisplayNames[efirType] then
+		efir.messageDisplayNames[efirType] = {}
 	end
 	local defaults = {
 		math = {
@@ -2930,7 +3639,7 @@ function resetEfirMessagesToDefault(efirType)
 			winner2 = "Побеждает * - первый набрал 10 баллов и получает приз!",
 			winner3 = "Просим победителя приехать в нашу редакцию для получения приза.",
 			end1 = "На этом наш эфир подходит к концу.",
-			end2 = "С вами был* #1 - #!",
+			end2 = "С вами был #1 - #!",
 			end3 = "До свидания, штат. Оставайтесь на волне!",
 			end4 = "•°•°•°•° Музыкальная заставка •°•°•°•°•",
 			end5 = "/todo Вот и всё..* выключив микрофон."
@@ -2955,7 +3664,7 @@ function resetEfirMessagesToDefault(efirType)
 			winner2 = "Побеждает * - первый набрал 10 баллов и получает приз!",
 			winner3 = "Просим победителя приехать в нашу редакцию для получения приза.",
 			end1 = "На этом наш эфир подходит к концу.",
-			end2 = "С вами был* #1 - #!",
+			end2 = "С вами был #1 - #!",
 			end3 = "До свидания, штат. Оставайтесь на волне!",
 			end4 = "•°•°•°•° Музыкальная заставка •°•°•°•°•",
 			end5 = "/todo На этом всё..* выключив микрофон."
@@ -2980,7 +3689,7 @@ function resetEfirMessagesToDefault(efirType)
 			winner2 = "Побеждает * - первый набрал 10 баллов и получает приз!",
 			winner3 = "Просим победителя приехать в нашу редакцию для получения приза.",
 			end1 = "На этом наш эфир подходит к концу.",
-			end2 = "С вами был* #1 - #!",
+			end2 = "С вами был #1 - #!",
 			end3 = "До свидания, штат. Оставайтесь на волне!",
 			end4 = "•°•°•°•° Музыкальная заставка •°•°•°•°•",
 			end5 = "/todo На этом всё..* выключив микрофон."
@@ -3005,7 +3714,7 @@ function resetEfirMessagesToDefault(efirType)
 			winner2 = "Побеждает * - первый набрал 10 баллов и получает приз!",
 			winner3 = "Просим победителя приехать в нашу редакцию для получения приза.",
 			end1 = "На этом наш эфир подходит к концу.",
-			end2 = "С вами был* #1 - #!",
+			end2 = "С вами был #1 - #!",
 			end3 = "До свидания, штат. Оставайтесь на волне!",
 			end4 = "•°•°•°•° Музыкальная заставка •°•°•°•°•",
 			end5 = "/todo На этом всё..* выключив микрофон."
@@ -3025,20 +3734,17 @@ function resetEfirMessagesToDefault(efirType)
 			msg12 = "...паспорт, мед. карту, трудовую книгу и быть законопослушным гражданином.",
 			msg13 = "Так-же вы можете подать заявку на оффициальном портале.",
 			msg14 = "Не упускай свой шанс заработать, и стать популярной личностью!",
-			end1 = "На этом наш эфир подходит к концу.",
-			end2 = "До свидания, штат. Оставайтесь на волне ВИС.",
-			end3 = "•°•°•°•° Музыкальная заставка Voice of Inner City •°•°•°•°•",
-			end4 = "/todo На этом всё..*выключив микрофон.",
-			stop1 = "/todo Начнем..*включив микрофон.",
-			stop2 = "•°•°•°•° Музыкальная заставка Voice of Inner City •°•°•°•°•",
-			stop3 = "Доброе время суток, уважаемые радиослушатели!",
-			stop4 = "Хочу сказать, что собеседование в редакцию окончено.",
-			stop5 = "Ждем вас на следующем собеседовании, или же..",
-			stop6 = "..ждём вашего заявления на оффициальном портале.",
-			stop7 = "На этом наш эфир подходит к концу.",
-			stop8 = "До свидания, штат. Оставайтесь на волне ВИС.",
-			stop9 = "•°•°•°•° Музыкальная заставка Voice of Inner City •°•°•°•°•",
-			stop10 = "/todo На этом всё..*выключив микрофон."
+			msg15 = "•°•°•°•° Музыкальная заставка Voice of Inner City •°•°•°•°•",
+			end1 = "/todo Начнем..*включив микрофон.",
+			end2 = "•°•°•°•° Музыкальная заставка Voice of Inner City •°•°•°•°•",
+			end3 = "Доброе время суток, уважаемые радиослушатели!",
+			end4 = "Хочу сказать, что собеседование в редакцию окончено.",
+			end5 = "Ждем вас на следующем собеседовании, или же..",
+			end6 = "..ждём вашего заявления на оффициальном портале.",
+			end7 = "На этом наш эфир подходит к концу.",
+			end8 = "До свидания, штат. Оставайтесь на волне ВИС.",
+			end9 = "•°•°•°•° Музыкальная заставка Voice of Inner City •°•°•°•°•",
+			end10 = "/todo На этом всё..*выключив микрофон."
 		},
 		annagramm = {
 			msg1 = "/todo Начнем..* включив микрофон.",
@@ -3060,7 +3766,7 @@ function resetEfirMessagesToDefault(efirType)
 			winner2 = "Побеждает * - первый набрал 10 баллов и получает приз!",
 			winner3 = "Просим победителя приехать в нашу редакцию для получения приза.",
 			end1 = "На этом наш эфир подходит к концу.",
-			end2 = "С вами был* #1 - #!",
+			end2 = "С вами был #1 - #!",
 			end3 = "До свидания, штат. Оставайтесь на волне!",
 			end4 = "•°•°•°•° Музыкальная заставка •°•°•°•°•",
 			end5 = "/todo На этом всё..* выключив микрофон."
@@ -3085,7 +3791,7 @@ function resetEfirMessagesToDefault(efirType)
 			winner2 = "Побеждает * - первый набрал 10 баллов и получает приз!",
 			winner3 = "Просим победителя приехать в нашу редакцию для получения приза.",
 			end1 = "На этом наш эфир подходит к концу.",
-			end2 = "С вами был* #1 - #!",
+			end2 = "С вами был #1 - #!",
 			end3 = "До свидания, штат. Оставайтесь на волне!",
 			end4 = "•°•°•°•° Музыкальная заставка •°•°•°•°•",
 			end5 = "/todo На этом всё..* выключив микрофон."
@@ -3111,7 +3817,7 @@ function resetEfirMessagesToDefault(efirType)
 			winner2 = "Побеждает * - первый набрал 10 баллов и получает приз!",
 			winner3 = "Просим победителя приехать в нашу редакцию для получения приза.",
 			end1 = "На этом наш эфир подходит к концу.",
-			end2 = "С вами был* #1 - #!",
+			end2 = "С вами был #1 - #!",
 			end3 = "До свидания, штат. Оставайтесь на волне!",
 			end4 = "•°•°•°•° Музыкальная заставка •°•°•°•°•",
 			end5 = "/todo На этом всё..* выключив микрофон."
@@ -3129,7 +3835,7 @@ function resetEfirMessagesToDefault(efirType)
 			question3 = "Есть ли у вас жена, дети?",
 			question4 = "Хотели бы вы передать кому-нибудь приветы?",
 			end1 = "На этом наше интервью подходит к концу.",
-			end2 = "С вами был* ведущий #1 - #!",
+			end2 = "С вами был ведущий #1 - #!",
 			end3 = "До свидания, штат. Оставайтесь на волне ВИС.",
 			end4 = "•°•°•°•° Музыкальная заставка Voice of Inner City °•°•°•°•",
 			end5 = "/todo Вот и всё..* выключив микрофон."
@@ -3141,24 +3847,22 @@ function resetEfirMessagesToDefault(efirType)
 			msg4 = "Вы находитесь на волне ВИС.",
 			msg5 = "Сейчас прозвучит рекламная пауза.",
 			end1 = "На этом наш эфир подходит к концу.",
-			end2 = "С вами был* #1 - #! До свидания, штат. Оставайтесь на волне ВИС.",
+			end2 = "С вами был #1 - #! До свидания, штат. Оставайтесь на волне ВИС.",
 			end3 = "•°•°•°•° Музыкальная заставка Voice of Inner City •°•°•°•°•",
 			end4 = "/todo На этом всё..* выключив микрофон."
 		}
 	}
 	if defaults[efirType] then
-		if not efir.messages[efirType] then
-			efir.messages[efirType] = {}
-		end
 		for key, value in pairs(defaults[efirType]) do
 			local size = efir.messageSizes[key] or 512
 			efir.messages[efirType][key] = imgui.new.char[size](value)
 		end
 	end
+	saveEfirMessagesToFile()
 end
 function clearSearchCache()
-	search_cache = {}
-	lower_cache = {}
+	cache.search = {}
+	cache.lower = {}
 	ui.search.cachedResults = {}
 	ui.search.resultsValid = false
 end
@@ -3175,17 +3879,17 @@ function checkSMSAnswer(smsText, correctAnswer)
 	return normalized == correct
 end
 function sendNextQuestion()
-	local currentType = _G.currentEfirType or 'math'
-	if efir.currentQuestion <= 10 then
+	local currentType = efir.type or efir.selectedType or 'math'
+	if efir.currentQuestion < 1 then
+		efir.currentQuestion = 1
+	end
+	if efir.currentQuestion <= efirLineCount[currentType] then
 		local example = ffi.string(efir.examples[currentType][efir.currentQuestion])
 		if example ~= '' then
 			lua_thread.create(function()
-				if efir.currentQuestion == 1 then
-					sampSendChat(u8:decode(ffi.string(efir.messages[currentType].first)))
-				else
-					sampSendChat(u8:decode(ffi.string(efir.messages[currentType].next)))
-				end
-				wait(4000)
+				local msgKey = efir.currentQuestion == 1 and "first" or "next"
+				sampSendChat(u8:decode(ffi.string(efir.messages[currentType][msgKey])))
+				wait(3000)
 				sampSendChat(u8:decode(example))
 				efir.awaitingAnswer = true
 			end)
@@ -3482,7 +4186,7 @@ function startEfir(efirType)
 		return
 	end
 	if efirType == 'math' or efirType == 'country' or efirType == 'himia' or 
-	   efirType == 'zerkalo' or efirType == 'annagramm' or efirType == 'zagadki' or efirType == 'sinonim' then
+		efirType == 'zerkalo' or efirType == 'annagramm' or efirType == 'zagadki' or efirType == 'sinonim' then
 		local hasExamples = false
 		for i = 1, 10 do
 			if ffi.string(efir.examples[efirType][i]) ~= '' then
@@ -3550,14 +4254,7 @@ function startEfir(efirType)
 				return 
 			end
 		end
-		if efirType ~= 'inter' and efirType ~= 'reklama' and efirType ~= 'sobes' and data.mainIni.config.c_rang_b then
-			local rangMsg = data.mainIni.config.c_rang_b .. ' - ' .. data.mainIni.config.c_nick .. '!'
-			if not sendMessage(rangMsg, 3000) then 
-				efir.control.running = false
-				return 
-			end
-		end
-		local msgOrder = {'msg4', 'msg5', 'msg5_2', 'msg6', 'msg7', 'msg8', 'msg9', 'msg10', 'msg11', 'msg12', 'msg13', 'msg14'}
+		local msgOrder = {'msg4', 'msg5', 'msg5_2', 'msg6', 'msg7', 'msg8', 'msg9', 'msg10', 'msg11', 'msg12', 'msg13', 'msg14', 'msg15'}
 		for _, msgKey in ipairs(msgOrder) do
 			if messages[msgKey] then
 				local msgText = replaceEfirVariables(ffi.string(messages[msgKey]))
@@ -3578,6 +4275,23 @@ function startAutoEfir(efirType)
 		chatMessage(u8:decode('[News Helper] Заполните данные пользователя!'), 0xFF0000)
 		return
 	end
+	windows.mainSettings[0] = false
+	efir.auto.pausedDuringStartup = false
+	efir.auto.pausedDuringQuestions = false
+	efir.auto.finishedQuestions = false
+	efir.auto.pausedAnswer = nil
+	efir.auto.active = false
+	efir.auto.paused = false
+	efir.auto.pausedManually = false
+	efir.auto.finishedQuestions = false
+	efir.auto.efirType = nil
+	efir.auto.currentQuestion = 0
+	efir.auto.totalQuestions = 0
+	efir.auto.waitingForAnswer = false
+	efir.auto.correctAnswers = {}
+	efir.auto.isFirstPassage = true
+	efir.counter = {}
+	efir.lastBallVariant = {}
 	if not efir.messages[efirType] then
 		chatMessage(u8:decode('[News Helper] Сообщения эфира не загружены!'), 0xFF0000)
 		return
@@ -3587,214 +4301,537 @@ function startAutoEfir(efirType)
 		chatMessage(u8:decode('[News Helper] Отсутствуют необходимые сообщения эфира!'), 0xFF0000)
 		return
 	end
-	for i = 1, 10 do
-		local exampleOk, example = pcall(ffi.string, efir.examples[efirType][i])
-		local answerOk, answer = pcall(ffi.string, efir.answers[efirType][i])
-		if not exampleOk or not answerOk or example == '' or answer == '' then
-			chatMessage(u8:decode('[News Helper] Заполните все 10 примеров и ответов!'), 0xFF0000)
-			return
+	local questionCount = efirLineCount[efirType] or 10
+	local filledCount = 0
+	for i = 1, questionCount do
+		local example = ffi.string(efir.examples[efirType][i])
+		local answer = ffi.string(efir.answers[efirType][i])
+		if example ~= '' and answer ~= '' then
+			filledCount = filledCount + 1
 		end
+	end
+	if filledCount < questionCount then
+		chatMessage(u8:decode('[News Helper] Заполните все ' .. questionCount .. ' примеров И ответов!'), 0xFF0000)
+		chatMessage(u8:decode('[News Helper] Заполнено: ' .. filledCount .. '/' .. questionCount), 0xFFFF00)
+		return
 	end
 	if ffi.string(efir.inputs.money) == '' or ffi.string(efir.inputs.money) == '0' then
 		chatMessage(u8:decode('[News Helper] Укажите призовой фонд!'), 0xFF0000)
 		return
 	end
 	efir.auto.active = true
+	efir.auto.paused = false
+	efir.auto.pausedManually = false
+	efir.auto.finishedQuestions = false
 	efir.auto.efirType = efirType
 	efir.auto.currentQuestion = 0
 	efir.auto.waitingForAnswer = false
-	efir.counter = {}
-	efir.lastBallVariant = {}
+	efir.auto.totalQuestions = questionCount
 	efir.auto.correctAnswers = {}
-	for i = 1, 10 do
-		local ok, answer = pcall(ffi.string, efir.answers[efirType][i])
-		if ok and answer ~= '' then
-			efir.auto.correctAnswers[i] = answer
-		end
+	efir.auto.isFirstPassage = true
+	for i = 1, questionCount do
+		efir.auto.correctAnswers[i] = ffi.string(efir.answers[efirType][i])
 	end
-	chatMessage(u8:decode('[News Helper] Автоматический эфир начат!'), 0x00FF00)
+	chatMessage(u8:decode('[News Helper] Автоматический эфир начат! Вопросов: ' .. questionCount), 0x00FF00)
 	lua_thread.create(function()
 		local msgs = efir.messages[efirType]
+		local function checkPause()
+			while efir.auto.pausedDuringStartup and efir.auto.active do
+				wait(100)
+			end
+			return efir.auto.active and not efir.auto.pausedManually
+		end
 		if msgs.msg1 then
-			local ok, txt = pcall(ffi.string, msgs.msg1)
-			if ok then sampSendChat(u8:decode(replaceEfirVariables(txt))) wait(2000) end
+			sampSendChat(u8:decode(replaceEfirVariables(ffi.string(msgs.msg1))))
+			wait(2000)
+			if not checkPause() then return end
 		end
 		if msgs.msg2 then
-			local ok, txt = pcall(ffi.string, msgs.msg2)
-			if ok then sampSendChat(u8:decode(replaceEfirVariables(txt))) wait(3000) end
+			sampSendChat(u8:decode(replaceEfirVariables(ffi.string(msgs.msg2))))
+			wait(3000)
+			if not checkPause() then return end
 		end
 		if msgs.msg3 then
-			local ok, txt = pcall(ffi.string, msgs.msg3)
-			if ok then sampSendChat(u8:decode(replaceEfirVariables(txt))) wait(3000) end
-		end
-		if data.mainIni.config.c_rang_b then
-			local rangMsg = data.mainIni.config.c_rang_b .. ' - ' .. data.mainIni.config.c_nick .. '!'
-			sampSendChat(u8:decode(rangMsg))
+			sampSendChat(u8:decode(replaceEfirVariables(ffi.string(msgs.msg3))))
 			wait(3000)
+			if not checkPause() then return end
 		end
 		local msgOrder = {'msg4', 'msg5', 'msg5_2', 'msg6', 'msg7', 'msg8'}
 		for _, msgKey in ipairs(msgOrder) do
+			if not efir.auto.active or efir.auto.pausedManually then return end
 			if msgs[msgKey] then
-				local ok, txt = pcall(ffi.string, msgs[msgKey])
-				if ok then
-					sampSendChat(u8:decode(replaceEfirVariables(txt)))
-					wait(3000)
-				end
+				sampSendChat(u8:decode(replaceEfirVariables(ffi.string(msgs[msgKey]))))
+				wait(3000)
+				if not checkPause() then return end
 			end
 		end
-		sendNextAutoQuestion()
+		if efir.auto.active and not efir.auto.pausedManually and not efir.auto.pausedDuringStartup then
+			sendNextAutoQuestion()
+		end
 	end)
 end
 function sendNextAutoQuestion()
-	if not efir.auto.active then return end
+	if not efir.auto.active or efir.auto.pausedDuringStartup then return end
 	efir.auto.currentQuestion = efir.auto.currentQuestion + 1
-	if efir.auto.currentQuestion > 10 then
-		finishAutoEfir()
-		return
+	local totalQuestions = efir.auto.totalQuestions or 10
+	if efir.auto.currentQuestion > totalQuestions then
+		efir.auto.currentQuestion = 1
+		efir.auto.isFirstPassage = false
 	end
 	local efirType = efir.auto.efirType
-	if not efir.examples[efirType] or not efir.examples[efirType][efir.auto.currentQuestion] then
-		chatMessage(u8:decode('[News Helper] Ошибка: отсутствуют данные вопроса!'), 0xFF0000)
+	if not efirType then return end
+	if not efir.examples or not efir.examples[efirType] then return end
+	local exampleBuffer = efir.examples[efirType][efir.auto.currentQuestion]
+	if not exampleBuffer then return end
+	local example = ffi.string(exampleBuffer)
+	if example == '' then
+		lua_thread.create(function()
+			wait(100)
+			if efir.auto.active and not efir.auto.pausedDuringStartup then
+				sendNextAutoQuestion()
+			end
+		end)
+		return
+	end
+	lua_thread.create(function()
+		local messages = efir.messages[efirType]
+		if not messages then return end
+		while (efir.auto.pausedDuringQuestions or efir.auto.pausedDuringStartup) and efir.auto.active do
+			wait(100)
+		end
+		if not efir.auto.active or efir.auto.pausedDuringQuestions or efir.auto.pausedDuringStartup then return end
+		local useFirst = efir.auto.isFirstPassage and efir.auto.currentQuestion == 1
+		local msgKey = useFirst and "first" or "next"
+		sampSendChat(u8:decode(replaceEfirVariables(ffi.string(messages[msgKey]))))
+		wait(3000)
+		while (efir.auto.pausedDuringQuestions or efir.auto.pausedDuringStartup) and efir.auto.active do
+			wait(100)
+		end
+		if not efir.auto.active or efir.auto.pausedDuringQuestions or efir.auto.pausedDuringStartup then return end
+		sampSendChat(u8:decode(example))
+		efir.auto.waitingForAnswer = true
+	end)
+end
+function pauseAutoEfirDuringQuestions()
+	efir.auto.waitingForAnswer = false
+	efir.auto.pausedDuringQuestions = true
+	chatMessage(u8:decode('[News Helper] Эфир на паузе'), 0xFFFF00)
+end
+function pauseAutoEfir()
+	efir.auto.active = false
+	efir.auto.waitingForAnswer = false
+	efir.auto.pausedManually = true
+	chatMessage(u8:decode('[News Helper] Эфир на паузе'), 0xFFFF00)
+end
+function pauseAutoEfirDuringStartup()
+	efir.auto.pausedDuringStartup = true
+	chatMessage(u8:decode('[News Helper] Эфир на паузе'), 0xFFFF00)
+end
+function endAutoEfirQuestions()
+	efir.auto.active = false
+	efir.auto.waitingForAnswer = false
+	efir.auto.finishedQuestions = true
+	chatMessage(u8:decode('[News Helper] Вопросы закончились!'), 0xFFFF00)
+	chatMessage(u8:decode('[News Helper] Измените текущие вопросы если хотите'), 0xFFFF00)
+	chatMessage(u8:decode('[News Helper] Нажмите ' .. getHotkeyString(efir.control.pauseHotkey) .. ' чтобы продолжить.'), 0xFFFF00)
+end
+function resumeAutoEfirDuringStartup()
+	if not efir.auto.pausedDuringStartup then return end
+	efir.auto.pausedDuringStartup = false
+	windows.mainSettings[0] = false
+	chatMessage(u8:decode('[News Helper] Эфир возобновлен'), 0x00FF00)
+end
+function resumeAutoEfirAfterEnd()
+	if not efir.auto.finishedQuestions then return end
+	efir.auto.finishedQuestions = false
+	efir.auto.active = true
+	efir.auto.currentQuestion = 0
+	efir.auto.isFirstPassage = false
+	windows.mainSettings[0] = false
+	local efirType = efir.auto.efirType
+	if not efirType then
+		chatMessage(u8:decode('[News Helper] Ошибка: тип эфира не определен'), 0xFF0000)
 		stopAutoEfir()
 		return
 	end
-	local exampleOk, example = pcall(ffi.string, efir.examples[efirType][efir.auto.currentQuestion])
-	if not exampleOk or example == '' then
-		lua_thread.create(function()
-			wait(100)
-			sendNextAutoQuestion()
-		end)
+	local totalQuestions = efirLineCount[efirType] or 10
+	efir.auto.totalQuestions = totalQuestions
+	efir.auto.correctAnswers = {}
+	if not efir.answers[efirType] then
+		chatMessage(u8:decode('[News Helper] Ошибка: данные ответов не загружены'), 0xFF0000)
+		stopAutoEfir()
+		return
+	end
+	for i = 1, totalQuestions do
+		if efir.answers[efirType][i] then
+			efir.auto.correctAnswers[i] = ffi.string(efir.answers[efirType][i])
+		end
+	end
+	chatMessage(u8:decode('[News Helper] Начинаю циклирование вопросов'), 0x00FF00)
+	sendNextAutoQuestion()
+end
+function resumeAutoEfirDuringQuestions()
+	if not efir.auto.pausedDuringQuestions then return end
+	efir.auto.pausedDuringQuestions = false
+	windows.mainSettings[0] = false
+	local efirType = efir.auto.efirType
+	if not efirType then
+		chatMessage(u8:decode('[News Helper] Ошибка: тип эфира не определен'), 0xFF0000)
+		stopAutoEfir()
+		return
+	end
+	local totalQuestions = efirLineCount[efirType] or 10
+	efir.auto.correctAnswers = {}
+	if not efir.answers[efirType] then
+		chatMessage(u8:decode('[News Helper] Ошибка: данные ответов не загружены'), 0xFF0000)
+		stopAutoEfir()
+		return
+	end
+	for i = 1, totalQuestions do
+		if efir.answers[efirType][i] then
+			efir.auto.correctAnswers[i] = ffi.string(efir.answers[efirType][i])
+		end
+	end
+	chatMessage(u8:decode('[News Helper] Эфир возобновлен'), 0x00FF00)
+	if efir.auto.pausedAnswer then
+		local answer = efir.auto.pausedAnswer
+		efir.auto.pausedAnswer = nil
+		efir.auto.waitingForAnswer = false
+		local action = {
+			type = "correct_answer",
+			senderName = answer.senderName,
+			translatedName = answer.translatedName,
+			efirType = efir.auto.efirType,
+			startTime = os.clock(),
+			step = 1,
+			points = 1,
+			questionId = efir.auto.currentQuestion
+		}
+		if action.senderName and action.senderName ~= "" then
+			table.insert(efir.auto.actionQueue, action)
+		end
+	else
+		efir.auto.active = true
+		efir.auto.waitingForAnswer = true
+	end
+end
+function resumeAutoEfir()
+	if not efir.auto.pausedManually and not efir.auto.finishedQuestions then return end
+	efir.auto.finishedQuestions = false
+	efir.auto.pausedManually = false
+	efir.auto.active = true
+	windows.mainSettings[0] = false
+	local efirType = efir.auto.efirType
+	if not efirType then
+		chatMessage(u8:decode('[News Helper] Ошибка: тип эфира не определен'), 0xFF0000)
+		stopAutoEfir()
+		return
+	end
+	local totalQuestions = efirLineCount[efirType] or 10
+	if not totalQuestions then totalQuestions = 10 end
+	efir.auto.correctAnswers = {}
+	if not efir.answers[efirType] then
+		chatMessage(u8:decode('[News Helper] Ошибка: данные ответов не загружены'), 0xFF0000)
+		stopAutoEfir()
+		return
+	end
+	for i = 1, totalQuestions do
+		if efir.answers[efirType][i] then
+			efir.auto.correctAnswers[i] = ffi.string(efir.answers[efirType][i])
+		end
+	end
+	chatMessage(u8:decode('[News Helper] Эфир возобновлен'), 0x00FF00)
+	sendNextAutoQuestion()
+end
+function processAutoAnswerWithPause(smsText, sender, senderId)
+	if efir.auto.paused then return false end
+	return processAutoAnswer(smsText, sender, senderId)
+end
+function processAutoAnswer(smsText, sender, senderId)
+	if not efir.auto.correctAnswers or not efir.auto.correctAnswers[efir.auto.currentQuestion] then 
+		return false
+	end
+	if efir.auto.updating then return false end
+	if not efir.auto.active and not efir.auto.pausedDuringQuestions then return false end
+	if not efir.auto.waitingForAnswer and not efir.auto.pausedDuringQuestions then return false end
+	if not efir.auto.correctAnswers or not efir.auto.correctAnswers[efir.auto.currentQuestion] then return false end
+	local correctAnswer = efir.auto.correctAnswers[efir.auto.currentQuestion]
+	if not correctAnswer or correctAnswer == '' then return false end
+	if checkSMSAnswer(smsText, correctAnswer) then
+		local senderName = sender and sender:gsub("_", " ") or "Unknown"
+		local translatedName = sender and trst(sender:gsub("_", " ")) or "Unknown"
+		if efir.auto.pausedDuringQuestions then
+			if not efir.auto.pausedAnswer then
+				efir.auto.pausedAnswer = {
+					senderName = senderName,
+					translatedName = translatedName
+				}
+				sampAddChatMessage(u8:decode('[News Helper] Ответ от ' .. translatedName .. ' принят, но эфир на паузе. Нажмите ' .. getHotkeyString(efir.control.pauseHotkey) .. ' для возобновления'), 0xFFFF00)
+			end
+			return true
+		end
+		efir.auto.waitingForAnswer = false
+		local action = {
+			type = "correct_answer",
+			senderName = senderName,
+			translatedName = translatedName,
+			efirType = efir.auto.efirType,
+			startTime = os.clock(),
+			step = 1,
+			points = 1,
+			questionId = efir.auto.currentQuestion
+		}
+		if action.senderName and action.senderName ~= "" then
+			table.insert(efir.auto.actionQueue, action)
+			return true
+		end
+	end
+	return false
+end
+function processAutoEfirActionQueue()
+	if #efir.auto.actionQueue == 0 then return end
+	if not efir.auto.active and not efir.auto.paused then 
+		efir.auto.actionQueue = {}
+		return 
+	end
+	local action = efir.auto.actionQueue[1]
+	if not action then return end
+	if efir.auto.pausedDuringQuestions or efir.auto.pausedDuringStartup then return end
+	if action.questionId ~= efir.auto.currentQuestion then
+		table.remove(efir.auto.actionQueue, 1)
+		return
+	end
+	local efirType = efir.auto.efirType
+	if not efirType then return end
+	local currentTime = os.clock()
+	local elapsed = (currentTime - action.startTime) * 1000
+	if action.type == "correct_answer" then
+		if action.step == 1 and elapsed >= 500 then
+			sampSendChat(u8:decode("Стоп!"))
+			if efir.counter and action.senderName then
+				if efir.counter[action.senderName] then
+					efir.counter[action.senderName] = efir.counter[action.senderName] + 1
+				else
+					efir.counter[action.senderName] = 1
+				end
+			end
+			action.step = 2
+			action.stepTime = currentTime
+		end
+		if action.step == 2 and (currentTime - action.stepTime) * 1000 >= 50 then
+			action.points = (efir.counter and efir.counter[action.senderName]) or 1
+			action.step = 3
+			action.stepTime = currentTime
+		end
+		if action.step == 3 then
+			local interval = 3000
+			if efir.intervals and efir.intervals[efirType] then
+				interval = efir.intervals[efirType][0] or 3000
+			end
+			if (currentTime - action.stepTime) * 1000 >= interval then
+				action.step = 4
+			end
+		end
+		if action.step == 4 then
+			if efir.auto.pausedDuringQuestions or efir.auto.pausedDuringStartup then return end
+			local points = action.points or 1
+			if points < 10 then
+				local variantType = ""
+				if points == 1 then
+					variantType = "ball1"
+				elseif points <= 4 then
+					variantType = "ball2"
+				else
+					variantType = "ball5"
+				end
+				local variants = {}
+				if efir.messages and efir.messages[efirType] then
+					local messages = efir.messages[efirType]
+					for msgKey, _ in pairs(messages) do
+						if msgKey == variantType or (type(msgKey) == "string" and msgKey:match("^" .. variantType .. "%.%d+$")) then
+							table.insert(variants, msgKey)
+						end
+					end
+				end
+				if #variants > 0 then
+					if not efir.lastBallVariant[action.senderName] then
+						efir.lastBallVariant[action.senderName] = 1
+					else
+						efir.lastBallVariant[action.senderName] = (efir.lastBallVariant[action.senderName] % #variants) + 1
+					end
+					local selectedVariant = variants[efir.lastBallVariant[action.senderName]]
+					if efir.messages and efir.messages[efirType] and selectedVariant then
+						local messageBuffer = efir.messages[efirType][selectedVariant]
+						if messageBuffer then
+							local ballMessage = ffi.string(messageBuffer)
+							if ballMessage and ballMessage ~= "" then
+								ballMessage = replaceEfirVariables(ballMessage)
+								ballMessage = ballMessage:gsub("%%", tostring(points))
+								ballMessage = ballMessage:gsub("%*1", action.translatedName)
+								sampSendChat(u8:decode(ballMessage))
+							end
+						end
+					end
+				end
+			end
+			action.step = 5
+			action.stepTime = currentTime
+		end
+		if action.step == 5 then
+			if efir.auto.pausedDuringQuestions or efir.auto.pausedDuringStartup then return end
+			local waitTime = (action.points and action.points >= 10) and 2000 or 2000
+			if (currentTime - action.stepTime) * 1000 >= waitTime then
+				table.remove(efir.auto.actionQueue, 1)
+				if action.points and action.points >= 10 then
+					finishAutoEfirWithWinner(action.translatedName)
+				else
+					if efir.auto.currentQuestion >= (efir.auto.totalQuestions or 10) then
+						endAutoEfirQuestions()
+					else
+						if efir.auto.active and not efir.auto.finishedQuestions then
+							sendNextAutoQuestion()
+						end
+					end
+				end
+			end
+		end
+	end
+end
+function finishAutoEfir()
+	if not efir.auto.active then return end
+	local efirType = efir.auto.efirType
+	if not efirType then
+		stopAutoEfir()
+		return
+	end
+	lua_thread.create(function()
+		if not efir.messages or not efir.messages[efirType] then
+			stopAutoEfir()
+			return
+		end
+		local messages = efir.messages[efirType]
+		if not messages then
+			stopAutoEfir()
+			return
+		end
+		local function checkPause()
+			while efir.auto.pausedDuringQuestions and efir.auto.active do
+				wait(100)
+			end
+			return efir.auto.active
+		end
+		if efir.auto.active and messages.end1 then 
+			local end1Msg = ffi.string(messages.end1)
+			if end1Msg and end1Msg ~= "" then
+				sampSendChat(u8:decode(replaceEfirVariables(end1Msg)))
+			end
+			wait(4000)
+			if not checkPause() then return end
+		end
+		if efir.auto.active and messages.end2 then 
+			local end2Msg = ffi.string(messages.end2)
+			if end2Msg and end2Msg ~= "" then
+				sampSendChat(u8:decode(replaceEfirVariables(end2Msg)))
+			end
+			wait(4000)
+			if not checkPause() then return end
+		end
+		if efir.auto.active and messages.end3 then 
+			local end3Msg = ffi.string(messages.end3)
+			if end3Msg and end3Msg ~= "" then
+				sampSendChat(u8:decode(replaceEfirVariables(end3Msg)))
+			end
+			wait(4000)
+			if not checkPause() then return end
+		end
+		if efir.auto.active and messages.end4 then 
+			local end4Msg = ffi.string(messages.end4)
+			if end4Msg and end4Msg ~= "" then
+				sampSendChat(u8:decode(replaceEfirVariables(end4Msg)))
+			end
+			wait(3000)
+			if not checkPause() then return end
+		end
+		if efir.auto.active and messages.end5 then 
+			local end5Msg = ffi.string(messages.end5)
+			if end5Msg and end5Msg ~= "" then
+				sampSendChat(u8:decode(replaceEfirVariables(end5Msg)))
+			end
+		end
+		stopAutoEfir()
+		chatMessage(u8:decode('[News Helper] Автоэфир завершен. Можно открывать /newstools'), 0x00FF00)
+	end)
+end
+function finishAutoEfirWithWinner(winnerName)
+	if not efir.auto.active then return end
+	local efirType = efir.auto.efirType
+	if not efirType then
+		stopAutoEfir()
 		return
 	end
 	lua_thread.create(function()
 		local messages = efir.messages[efirType]
 		if not messages then
-			chatMessage(u8:decode('[News Helper] Ошибка: сообщения эфира не загружены!'), 0xFF0000)
 			stopAutoEfir()
 			return
 		end
-		if efir.auto.currentQuestion == 1 then
-			if messages.first then
-				local ok, txt = pcall(ffi.string, messages.first)
-				if ok then
-					sampSendChat(u8:decode(replaceEfirVariables(txt)))
-				end
+		local function checkPause()
+			while efir.auto.pausedDuringQuestions and efir.auto.active do
+				wait(100)
 			end
-		else
-			if messages.next then
-				local ok, txt = pcall(ffi.string, messages.next)
-				if ok then
-					sampSendChat(u8:decode(replaceEfirVariables(txt)))
-				end
-			end
+			return efir.auto.active
 		end
-		wait(4000)
-		sampSendChat(u8:decode(example))
-		efir.auto.waitingForAnswer = true
-	end)
-end
-function processAutoAnswer(smsText, sender, senderId)
-	if not efir.auto.active or not efir.auto.waitingForAnswer then return false end
-	local correctAnswer = efir.auto.correctAnswers[efir.auto.currentQuestion]
-	if not correctAnswer then return false end
-	if checkSMSAnswer(smsText, correctAnswer) then
-		efir.auto.waitingForAnswer = false
-		sampSendChat("Стоп!")
-		local translatedName = trst(sender:gsub("_", " "))
-		addball(sender:gsub("_", " "))
-		local points = efir.counter[sender:gsub("_", " ")]
-		lua_thread.create(function()
-			local efirType = efir.auto.efirType
-			if not efir.intervals[efirType] then
-				wait(3000)
-			else
-				wait(efir.intervals[efirType][0])
+		if efir.auto.active and messages.winner1 then 
+			local winner1Msg = ffi.string(messages.winner1)
+			if winner1Msg and winner1Msg ~= "" then
+				sampSendChat(u8:decode(replaceEfirVariables(winner1Msg)))
 			end
-			local ballMessage = ""
-			local variantType = ""
-			if points == 1 then
-				variantType = "ball1"
-			elseif points <= 4 then
-				variantType = "ball2"
-			else
-				variantType = "ball5"
-			end
-			local variants = {}
-			local messages = efir.messages[efirType]
-			if messages then
-				for msgKey, _ in pairs(messages) do
-					if msgKey == variantType or msgKey:match("^" .. variantType .. "%.%d+$") then
-						table.insert(variants, msgKey)
-					end
-				end
-			end
-			if #variants > 0 then
-				if not efir.lastBallVariant[sender:gsub("_", " ")] then
-					efir.lastBallVariant[sender:gsub("_", " ")] = 1
-				else
-					efir.lastBallVariant[sender:gsub("_", " ")] = (efir.lastBallVariant[sender:gsub("_", " ")] % #variants) + 1
-				end
-				local selectedVariant = variants[efir.lastBallVariant[sender:gsub("_", " ")]]
-				if messages[selectedVariant] then
-					local ok, txt = pcall(ffi.string, messages[selectedVariant])
-					if ok then
-						ballMessage = txt
-					end
-				end
-			end
-			ballMessage = replaceEfirVariables(ballMessage)
-			ballMessage = ballMessage:gsub("%%", tostring(points))
-			ballMessage = ballMessage:gsub("%*1", translatedName)
-			sampSendChat(u8:decode(ballMessage))
-			if points == 10 then
-				wait(4000)
-				finishAutoEfirWithWinner(translatedName)
-			else
-				wait(2000)
-				sendNextAutoQuestion()
-			end
-		end)
-		return true
-	end
-	return false
-end
-function finishAutoEfir()
-	if not efir.auto.active then return end
-	lua_thread.create(function()
-		local efirType = efir.auto.efirType
-		local messages = efir.messages[efirType]
-		if messages.end1 then sampSendChat(u8:decode(replaceEfirVariables(ffi.string(messages.end1)))) wait(4000) end
-		if messages.end2 then sampSendChat(u8:decode(replaceEfirVariables(ffi.string(messages.end2)))) wait(4000) end
-		if messages.end3 then sampSendChat(u8:decode(replaceEfirVariables(ffi.string(messages.end3)))) wait(4000) end
-		if messages.end4 then sampSendChat(u8:decode(replaceEfirVariables(ffi.string(messages.end4)))) wait(3000) end
-		if messages.end5 then sampSendChat(u8:decode(replaceEfirVariables(ffi.string(messages.end5)))) end
-		stopAutoEfir()
-	end)
-end
-function finishAutoEfirWithWinner(winnerName)
-	if not efir.auto.active then return end
-	lua_thread.create(function()
-		local efirType = efir.auto.efirType
-		local messages = efir.messages[efirType]
-		if messages.winner1 then sampSendChat(u8:decode(replaceEfirVariables(ffi.string(messages.winner1)))) wait(4000) end
-		if messages.winner2 then
-			local msg = replaceEfirVariables(ffi.string(messages.winner2)):gsub("%*", winnerName)
-			sampSendChat(u8:decode(msg))
 			wait(4000)
+			if not checkPause() then return end
 		end
-		if messages.winner3 then sampSendChat(u8:decode(replaceEfirVariables(ffi.string(messages.winner3)))) wait(4000) end
+		if efir.auto.active and messages.winner2 then
+			local winner2Msg = ffi.string(messages.winner2)
+			if winner2Msg and winner2Msg ~= "" then
+				local msg = replaceEfirVariables(winner2Msg):gsub("%*", winnerName or "")
+				sampSendChat(u8:decode(msg))
+			end
+			wait(4000)
+			if not checkPause() then return end
+		end
+		if efir.auto.active and messages.winner3 then 
+			local winner3Msg = ffi.string(messages.winner3)
+			if winner3Msg and winner3Msg ~= "" then
+				sampSendChat(u8:decode(replaceEfirVariables(winner3Msg)))
+			end
+			wait(4000)
+			if not checkPause() then return end
+		end
 		finishAutoEfir()
 	end)
 end
 function stopAutoEfir()
+	if efir.control.running then
+		if efir.control.thread then
+			efir.control.thread:terminate()
+		end
+		efir.control.running = false
+		efir.control.paused = false
+		efir.control.currentLine = 1
+	end
+	local wasActive = efir.auto.active
+	local efirType = efir.auto.efirType
 	efir.auto.active = false
+	efir.auto.paused = false
 	efir.auto.efirType = nil
 	efir.auto.currentQuestion = 0
+	efir.auto.totalQuestions = 0
 	efir.auto.waitingForAnswer = false
 	efir.counter = {}
 	efir.lastBallVariant = {}
 	efir.auto.correctAnswers = {}
-	chatMessage(u8:decode('[News Helper] Автоматический эфир завершен'), 0xFF0000)
+	if wasActive then
+		chatMessage(u8:decode('[News Helper] Эфир завершен'), 0xFF0000)
+	end
 end
 function setDialogTextWithEncoding(text)
 	if sampIsDialogActive() then
@@ -3816,16 +4853,77 @@ function checkUserData()
 	end
 	return false
 end
-function endEfir()
-	local currentType = _G.currentEfirType or 'math'
-	local messages = efir.messages[currentType]
-	if not messages then return end
-	sampAddChatMessage(u8:decode('[News Helper] {FF0000}Эфир завершен'), 0xFFFFFF)
-	efir.control.running = false
-	efir.control.shouldEnd = false
-	efir.control.paused = false
+function stopEfir()
+	if efir.control.running then
+		if efir.control.thread then
+			efir.control.thread:terminate()
+		end
+		efir.control.running = false
+		efir.control.paused = false
+		efir.control.currentLine = 1
+	end
 	efir.counter = {}
 	efir.lastBallVariant = {}
+	chatMessage(u8:decode('[News Helper] Эфир остановлен'), 0xFF0000)
+end
+function endEfir()
+	local efirType = _G.currentEfirType or 'sobes'
+	local messages = efir.messages[efirType]
+	
+	if not messages then
+		chatMessage(u8:decode('[News Helper] Сообщения для эфира не найдены'), 0xFF0000)
+		return
+	end
+	if efir.control.running then
+		efir.control.paused = true
+		efir.control.shouldEnd = true
+	end
+	lua_thread.create(function()
+		chatMessage(u8:decode('[News Helper] Завершаем эфир...'), 0xFFFF00)
+		local endMessages = {
+			messages.end1 or messages.end_1,
+			messages.end2 or messages.end_2,
+			messages.end3 or messages.end_3,
+			messages.end4 or messages.end_4
+		}
+		for _, msg in ipairs(endMessages) do
+			if msg then
+				local msgText = ffi.string(msg)
+				if msgText ~= '' then
+					msgText = replaceEfirVariables(msgText)
+					sampSendChat(u8:decode(msgText))
+					wait(efir.intervals[efirType][0] or 3000)
+				end
+			end
+		end
+		efir.control.running = false
+		efir.control.paused = false
+		efir.control.shouldEnd = false
+		efir.counter = {}
+		efir.lastBallVariant = {}
+		chatMessage(u8:decode('[News Helper] Эфир завершен!'), 0x00FF00)
+	end)
+end
+function saveAutoEfirQuestions(efirType)
+	if not efirType or not efir.examples[efirType] then
+		chatMessage(u8:decode('[News Helper] Ошибка: эфир не выбран'), 0xFF0000)
+		return
+	end
+	local totalQuestions = efirLineCount[efirType] or 10
+	local savedCount = 0
+	for i = 1, totalQuestions do
+		local example = ffi.string(efir.examples[efirType][i])
+		local answer = ffi.string(efir.answers[efirType][i])
+		if example ~= '' and answer ~= '' then
+			savedCount = savedCount + 1
+		end
+	end
+	if savedCount == 0 then
+		chatMessage(u8:decode('[News Helper] Нет вопросов для сохранения!'), 0xFF0000)
+		return
+	end
+	saveConfig()
+	chatMessage(u8:decode('[News Helper] Сохранено ' .. savedCount .. ' вопросов из ' .. totalQuestions), 0x00FF00)
 end
 function addPlayerBall()
 	local id_string = ffi.string(efir.inputs.playerId)
@@ -3849,62 +4947,143 @@ function addPlayerBall()
 		return
 	end
 	local u_name = sampGetPlayerNickname(id):gsub("_"," ")
-	addball(u_name)
-	local ru_name = trst(u_name:gsub('%[PC%]',''):gsub('%[M%]',''))
-	local points = efir.counter[u_name]
-	local currentType = efir.type or efir.selectedType or 'math'
-	local messages = efir.messages[currentType]
-	if messages then
-		local ballMessage = ""
-		local variantType = ""
-		if points == 1 then
-			variantType = "ball1"
-		elseif points <= 4 then
-			variantType = "ball2" 
-		elseif points <= 10 then
-			variantType = "ball5"
-		end
-		local variants = {}
-		for msgKey, _ in pairs(messages) do
-			if msgKey == variantType or msgKey:match("^" .. variantType .. "%.%d+$") then
-				table.insert(variants, msgKey)
-			end
-		end
-		if #variants > 0 then
-			if not efir.lastBallVariant[u_name] then
-				efir.lastBallVariant[u_name] = 1
+	queueAddBall(u_name)
+	lua_thread.create(function()
+		wait(50)
+		local ru_name = trst(u_name:gsub('%[PC%]',''):gsub('%[M%]',''))
+		local points = efir.counter[u_name]
+		local currentType = efir.type or efir.selectedType or 'math'
+		local messages = efir.messages[currentType]
+		if messages then
+			if points < 10 then
+				local ballMessage = ""
+				local variantType = ""
+				if points == 1 then
+					variantType = "ball1"
+				elseif points <= 4 then
+					variantType = "ball2" 
+				elseif points <= 10 then
+					variantType = "ball5"
+				end
+				local variants = {}
+				for msgKey, _ in pairs(messages) do
+					if msgKey == variantType or msgKey:match("^" .. variantType .. "%.%d+$") then
+						table.insert(variants, msgKey)
+					end
+				end
+				if #variants > 0 then
+					if not efir.lastBallVariant[u_name] then
+						efir.lastBallVariant[u_name] = 1
+					else
+						efir.lastBallVariant[u_name] = (efir.lastBallVariant[u_name] % #variants) + 1
+					end
+					local selectedVariant = variants[efir.lastBallVariant[u_name]]
+					ballMessage = ffi.string(messages[selectedVariant])
+					ballMessage = replaceEfirVariables(ballMessage)
+					ballMessage = ballMessage:gsub("%%", tostring(points)) 
+					ballMessage = ballMessage:gsub("%*1", ru_name) 
+					sampSendChat(u8:decode(ballMessage))
+				end
 			else
-				efir.lastBallVariant[u_name] = (efir.lastBallVariant[u_name] % #variants) + 1
-			end
-			local selectedVariant = variants[efir.lastBallVariant[u_name]]
-			ballMessage = ffi.string(messages[selectedVariant])
-			ballMessage = replaceEfirVariables(ballMessage)
-			ballMessage = ballMessage:gsub("%%", tostring(points)) 
-			ballMessage = ballMessage:gsub("%*1", ru_name) 
-			sampSendChat(u8:decode(ballMessage))
-		end
-	end
-	if points == 10 then 
-		lua_thread.create(function()
-			efir.counter = {}
-			efir.lastBallVariant = {}
-			local messages = efir.messages[currentType]
-			if messages then
 				local winnerMsg1 = messages.winner1 and replaceEfirVariables(ffi.string(messages.winner1)) or "И у нас есть победитель!"
 				local winnerMsg2 = messages.winner2 and replaceEfirVariables(ffi.string(messages.winner2)):gsub("%*", ru_name) or ("Побеждает " .. ru_name .. " - первый набрал 10 баллов и получает приз!")
 				local winnerMsg3 = messages.winner3 and replaceEfirVariables(ffi.string(messages.winner3)) or "Просим победителя приехать в нашу редакцию для получения приза."
 				sampSendChat(u8:decode(winnerMsg1))
-				wait(4000)
+				wait(3000)
 				sampSendChat(u8:decode(winnerMsg2))
-				wait(4000)
+				wait(3000)
 				sampSendChat(u8:decode(winnerMsg3))
 			end
-		end)
+		end
+	end)
+end
+function clearEfirQuestions(efirType)
+	if not efirType or not efir.examples[efirType] then return end
+	for i = 1, 50 do
+		if efir.examples[efirType][i] then
+			ffi.fill(efir.examples[efirType][i], ffi.sizeof(efir.examples[efirType][i]))
+		end
+		if efir.answers[efirType][i] then
+			ffi.fill(efir.answers[efirType][i], ffi.sizeof(efir.answers[efirType][i]))
+		end
+	end
+	chatMessage(u8:decode('[News Helper] Все вопросы и ответы эфира "' .. efirType .. '" очищены'), 0x00FF00)
+	saveConfig()
+end
+function renderSaveAndClearQuestionsButtons(efirType)
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.7, 0.3, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.8, 0.4, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.15, 0.6, 0.25, 1))
+	if fa_font then imgui.PushFont(fa_font) end
+	if imgui.Button(fa('floppy_disk') .. ' Сохранить##' .. efirType, imgui.ImVec2(100, 25)) then
+		if fa_font then imgui.PopFont() end
+		saveAutoEfirQuestions(efirType)
+	end
+	if fa_font then imgui.PopFont() end
+	imgui.PopStyleColor(3)
+	imgui.SameLine()
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.6, 0.8, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.7, 0.9, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.1, 0.5, 0.7, 1))
+	if fa_font then imgui.PushFont(fa_font) end
+	if imgui.Button(fa('file_import') .. ' Вопросы', imgui.ImVec2(95, 25)) then
+		if fa_font then imgui.PopFont() end
+		bulkInput.active = true
+		bulkInput.mode = 'questions'
+		bulkInput.efirType = efirType
+		ffi.fill(bulkInput.text, 8192)
+	end
+	if fa_font then imgui.PopFont() end
+	imgui.PopStyleColor(3)
+	if imgui.IsItemHovered() then
+		imgui.BeginTooltip()
+		imgui.Text('Вставьте все вопросы')
+		imgui.Text('по одному на строку')
+		imgui.Text('(максимум 10 строк)')
+		imgui.EndTooltip()
+	end
+	imgui.SameLine()
+	if efir.mode[0] then
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.6, 0.8, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.7, 0.9, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.1, 0.5, 0.7, 1))
+		if fa_font then imgui.PushFont(fa_font) end
+		if imgui.Button(fa('file_import') .. ' Ответы', imgui.ImVec2(90, 25)) then
+			if fa_font then imgui.PopFont() end
+			bulkInput.active = true
+			bulkInput.mode = 'answers'
+			bulkInput.efirType = efirType
+			ffi.fill(bulkInput.text, 8192)
+		end
+		if fa_font then imgui.PopFont() end
+		imgui.PopStyleColor(3)
+		if imgui.IsItemHovered() then
+			imgui.BeginTooltip()
+			imgui.Text('Вставьте все ответы')
+			imgui.Text('по одному на строку')
+			imgui.Text('(максимум 10 строк)')
+			imgui.EndTooltip()
+		end
+	end
+	imgui.SameLine()
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.2, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.3, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.1, 0.1, 1))
+	if fa_font then imgui.PushFont(fa_font) end
+	if imgui.Button(fa('trash_can') .. ' Очистить все', imgui.ImVec2(100, 25)) then
+		if fa_font then imgui.PopFont() end
+		clearEfirQuestions(efirType)
+	end
+	imgui.PopStyleColor(3)
+	if imgui.IsItemHovered() then
+		imgui.SetTooltip('Удалить все вопросы и ответы')
 	end
 end
 function renderQuizEfir(efirType, efirName, questionLabel)
+	if not efir.examples or not efir.examples[efirType] then return end
+	if not efir.answers or not efir.answers[efirType] then return end
 	if efir.selectedType == efirType then
-		tabWindowSizes[6].y = 750
+		tabWindowSizes[6].y = 800
 	end
 	imgui.Text('Эфир "' .. efirName .. '"')
 	imgui.Separator()
@@ -3915,27 +5094,25 @@ function renderQuizEfir(efirType, efirName, questionLabel)
 	local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
 	imgui.BeginChild('##' .. efirType .. 'LeftPanel', imgui.ImVec2(250, 0), true)
 	imgui.Text('Режим:')
-	imgui.PushStyleColor(imgui.Col.CheckMark, imgui.ImVec4(0.2, 0.8, 0.2, 1))
+	setupCheckboxStyle()
 	if imgui.Checkbox('Автоматический##' .. efirType .. 'mode', efir.mode) then
 		saveConfig()
 	end
-	imgui.PopStyleColor()
+	cleanupCheckboxStyle()
 	imgui.Spacing()
 	if not efir.mode[0] then
 		renderIntervalControl(efirType, 'Интервал (мс)')
 	else
 		imgui.TextColored(imgui.ImVec4(0.5, 0.5, 0.5, 1), '(Автоматический режим: ')
-		imgui.TextColored(imgui.ImVec4(0.5, 0.5, 0.5, 1), 'интервал фиксирован - 3000 мс')
+		imgui.TextColored(imgui.ImVec4(0.5, 0.5, 0.5, 1), 'интервал фиксирован - 3000 мс)')
 	end
 	imgui.Spacing()
 	imgui.Text('Приз ($):')
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	imgui.PushItemWidth(-1)
-	imgui.InputText('##MoneyPrize' .. efirType, efir.inputs.money, 32)
+	if imgui.InputText('##MoneyPrize' .. efirType, efir.inputs.money, 32) then
+		saveConfig()
+	end
 	imgui.PopItemWidth()
-	imgui.PopStyleColor(3)
 	imgui.Spacing()
 	imgui.Separator()
 	imgui.Spacing()
@@ -3959,13 +5136,21 @@ function renderQuizEfir(efirType, efirName, questionLabel)
 	if fa_font then imgui.PushFont(fa_font) end
 	if imgui.Button(fa('flag_checkered') .. ' Завершить', imgui.ImVec2(-1, 30)) then
 		if fa_font then imgui.PopFont() end
-		if efir.auto.active then
-			stopAutoEfir()
-		elseif efir.control.running then
-			endEfir()
+		if not efir.confirmFinishEfir then
+			efir.confirmFinishEfir = true
 		else
-			chatMessage(u8:decode('[News Helper] Эфир не запущен'), 0xFF0000)
+			if efir.auto.active then
+				stopAutoEfir()
+			elseif efir.control.running then
+				stopEfir()
+			else
+				chatMessage(u8:decode('[News Helper] Эфир не запущен'), 0xFF0000)
+			end
+			efir.confirmFinishEfir = false
 		end
+	end
+	if efir.confirmFinishEfir and imgui.IsItemHovered() then
+		imgui.SetTooltip('Нажмите еще раз для подтверждения')
 	end
 	imgui.PopStyleColor(3)
 	if not efir.mode[0] then
@@ -3975,7 +5160,15 @@ function renderQuizEfir(efirType, efirName, questionLabel)
 		if fa_font then imgui.PushFont(fa_font) end
 		if imgui.Button(fa('stop') .. ' Закончить эфир', imgui.ImVec2(-1, 30)) then
 			if fa_font then imgui.PopFont() end
-			endEfir()
+			if efir.control.paused then
+				chatMessage(u8:decode('[News Helper] Сначала возобновите эфир!'), 0xFF0000)
+			else
+				endEfir()
+			end
+			efir.confirmEndEfir = false
+		end
+		if efir.confirmEndEfir and imgui.IsItemHovered() then
+			imgui.SetTooltip('Нажмите еще раз для подтверждения')
 		end
 		if fa_font then imgui.PopFont() end
 		imgui.PopStyleColor(3)
@@ -3985,19 +5178,51 @@ function renderQuizEfir(efirType, efirName, questionLabel)
 		if fa_font then imgui.PushFont(fa_font) end
 		if imgui.Button(fa('hand') .. ' СТОП!', imgui.ImVec2(-1, 60)) then
 			if fa_font then imgui.PopFont() end
-			sampSendChat("Стоп!")
+			if efir.control.paused then
+				chatMessage(u8:decode('[News Helper] Сначала возобновите эфир!'), 0xFF0000)
+			else
+				sampSendChat(u8:decode("Стоп!"))
+			end
 		end
 		if fa_font then imgui.PopFont() end
 		imgui.PopStyleColor(3)
 		imgui.Spacing()
 		imgui.Text('ID игрока:')
-		imgui.PushItemWidth(-1)
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
-		imgui.InputText('##PlayerID' .. efirType, efir.inputs.playerId, 32)
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+		if imgui.Button('-##DecPlayerId', imgui.ImVec2(25, 0)) then
+			local currentId = tonumber(ffi.string(efir.inputs.playerId)) or 0
+			if currentId > 0 then
+				ffi.fill(efir.inputs.playerId, 32)
+				ffi.copy(efir.inputs.playerId, tostring(currentId - 1))
+			else
+				ffi.fill(efir.inputs.playerId, 32)
+			end
+		end
+		imgui.SameLine(0, 5)
 		imgui.PopStyleColor(3)
+		local inputWidth = imgui.GetWindowWidth() - 80
+		imgui.PushItemWidth(inputWidth)
+		imgui.InputText('##PlayerID' .. efirType, efir.inputs.playerId, 32)
 		imgui.PopItemWidth()
+		imgui.SameLine(0, 5)
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+		if imgui.Button('+##IncPlayerId', imgui.ImVec2(25, 0)) then
+			local currentId = tonumber(ffi.string(efir.inputs.playerId))
+			if currentId then
+				if currentId < 999 then
+					ffi.fill(efir.inputs.playerId, 32)
+					ffi.copy(efir.inputs.playerId, tostring(currentId + 1))
+				end
+			else
+				ffi.fill(efir.inputs.playerId, 32)
+				ffi.copy(efir.inputs.playerId, "0")
+			end
+		end
+		imgui.PopStyleColor(3)
 		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
 		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
@@ -4021,23 +5246,24 @@ function renderQuizEfir(efirType, efirName, questionLabel)
 		imgui.Separator()
 		imgui.Spacing()
 		imgui.TextColored(imgui.ImVec4(0, 1, 0, 1), 'Автоматический режим активен')
-		imgui.Text('Вопрос: ' .. efir.auto.currentQuestion .. ' / 10')
+		imgui.Text('Вопрос: ' .. efir.auto.currentQuestion .. ' / ' .. efirLineCount[efirType])
 		if efir.auto.waitingForAnswer then
 			imgui.TextColored(imgui.ImVec4(1, 1, 0, 1), 'Ожидание ответа...')
 		end
+		renderAutoEfirScoreBoard()
 	end
 	imgui.EndChild()
 	imgui.SameLine()
 	imgui.BeginChild('##' .. efirType .. 'RightPanel', imgui.ImVec2(0, 0), true)
 	imgui.Text(questionLabel .. ' и ответы:')
+	imgui.Text('Количество строк: ' .. efirLineCount[efirType])
+	imgui.SameLine()
+	renderSaveAndClearQuestionsButtons(efirType)
 	imgui.Separator()
-	for i = 1, 10 do
+	for i = 1, efirLineCount[efirType] do
 		imgui.PushIDInt(i)
 		imgui.Text(questionLabel .. ' ' .. i .. ':')
 		imgui.PushItemWidth(250)
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 		if imgui.InputText('##Example', efir.examples[efirType][i], 256) then
 			if efirType == 'math' then
 				local example = ffi.string(efir.examples[efirType][i])
@@ -4051,26 +5277,44 @@ function renderQuizEfir(efirType, efirName, questionLabel)
 				else
 					ffi.fill(efir.answers[efirType][i], 256)
 				end
+			elseif efirType == 'zerkalo' then
+				local example = ffi.string(efir.examples[efirType][i])
+				if example ~= '' then
+					local function utf8reverse(s)
+						local t = {}
+						for uchar in s:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+							table.insert(t, 1, uchar)
+						end
+						return table.concat(t)
+					end
+					local mirrored = utf8reverse(example)
+					if not efir.answers[efirType][i] then
+						efir.answers[efirType][i] = imgui.new.char[256]()
+					else
+						ffi.fill(efir.answers[efirType][i], 256)
+					end
+					ffi.copy(efir.answers[efirType][i], mirrored)
+				else
+					if efir.answers[efirType][i] then
+						ffi.fill(efir.answers[efirType][i], 256)
+					end
+				end
 			end
 		end
-		imgui.PopStyleColor(3)
 		imgui.PopItemWidth()
 		if efir.mode[0] then
 			imgui.SameLine()
 			imgui.Text('Ответ:')
 			imgui.SameLine()
 			imgui.PushItemWidth(100)
-			imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-			imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-			imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 			imgui.InputText('##Answer', efir.answers[efirType][i], 256)
-			imgui.PopStyleColor(3)
 			imgui.PopItemWidth()
 		else
 			imgui.SameLine()
 			imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 			imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
 			imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+			local answerText = ffi.string(efir.answers[efirType][i])
 			if imgui.Button('Отправить', imgui.ImVec2(80, 20)) then
 				local example = ffi.string(efir.examples[efirType][i])
 				if example ~= '' then
@@ -4090,14 +5334,13 @@ function renderQuizEfir(efirType, efirName, questionLabel)
 			end
 			imgui.PopStyleColor(3)
 			if imgui.IsItemHovered() then
-				local answer = ffi.string(efir.answers[efirType][i])
-				if answer ~= '' then
-					imgui.BeginTooltip()
-					imgui.TextColored(imgui.ImVec4(0, 1, 0, 1), 'Ответ: ' .. answer)
-					imgui.EndTooltip()
+				imgui.BeginTooltip()
+				if answerText ~= '' then
+					imgui.TextColored(imgui.ImVec4(0, 1, 0, 1), 'Ответ: ' .. answerText)
 				else
 					imgui.SetTooltip('Введите ' .. questionLabel:lower() .. ' для расчета ответа')
 				end
+				imgui.EndTooltip()
 			end
 		end
 		imgui.PopID()
@@ -4133,30 +5376,36 @@ function renderIntervyuEfir()
 	local bg = settings.colors.background
 	local item = settings.colors.itemButtons
 	local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
-	local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
-	local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
 	if fa_font then imgui.PushFont(fa_font) end
 	if imgui.Button(fa('play') .. ' Начать эфир', imgui.ImVec2(100, 25)) then
 	if fa_font then imgui.PopFont() end
 		startEfir('inter')
+		efir.confirmFinishEfir = false
 	end
 	if fa_font then imgui.PopFont() end
-	imgui.PopStyleColor(3)
+	imgui.PopStyleColor(2)
 	imgui.SameLine()
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.4, 0.2, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.5, 0.3, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.3, 0.1, 1))
 	if fa_font then imgui.PushFont(fa_font) end
-	if imgui.Button(fa('flag_checkered') .. ' Завершить эфир', imgui.ImVec2(135, 25)) then
+	if imgui.Button(fa('flag_checkered') .. ' Завершить', imgui.ImVec2(100, 25)) then
 		if fa_font then imgui.PopFont() end
-		if efir.control.running then
-			endEfir()
+		if not efir.confirmFinishEfir then
+			efir.confirmFinishEfir = true
 		else
-			chatMessage(u8:decode('[News Helper] Эфир не запущен'), 0xFF0000)
+			if efir.control.running then
+				stopEfir()
+			else
+				chatMessage(u8:decode('[News Helper] Эфир не запущен'), 0xFF0000)
+			end
+			efir.confirmFinishEfir = false
 		end
+	end
+	if efir.confirmFinishEfir and imgui.IsItemHovered() then
+		imgui.SetTooltip('Нажмите еще раз для подтверждения')
 	end
 	if fa_font then imgui.PopFont() end
 	imgui.PopStyleColor(3)
@@ -4166,24 +5415,22 @@ function renderIntervyuEfir()
 	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
 	if fa_font then imgui.PushFont(fa_font) end
 	if imgui.Button(fa('stop') .. ' Закончить эфир', imgui.ImVec2(120, 25)) then
-	if fa_font then imgui.PopFont() end
-		endEfir()
+		if fa_font then imgui.PopFont() end
+		if efir.control.paused then
+			chatMessage(u8:decode('[News Helper] Сначала возобновите эфир!'), 0xFF0000)
+		else
+			_G.currentEfirType = 'inter'
+			endEfir()
+		end
+		efir.confirmFinishEfir = false
 	end
 	if fa_font then imgui.PopFont() end
 	imgui.PopStyleColor(3)
 	imgui.Spacing()
 	imgui.Text('Имя и Фамилия гостя:')
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	imgui.InputText('##GuestName', efir.interview.name, 256)
-	imgui.PopStyleColor(3)
 	imgui.Text('Должность:')
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	imgui.InputText('##GuestRank', efir.interview.rang, 256)
-	imgui.PopStyleColor(3)
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
@@ -4196,7 +5443,7 @@ function renderIntervyuEfir()
 			local rang = ffi.string(efir.interview.rang)
 			local introduceText = ffi.string(messages.introduce):gsub("%*", rang == '' and name or (rang .. ' - ' .. name))
 			sampSendChat(u8:decode(introduceText))
-			wait(2000)
+			wait(efir.intervals.inter[0] or 3000)
 			sampSendChat(u8:decode(ffi.string(messages.introduce2)))
 		end)
 	end
@@ -4217,23 +5464,19 @@ function renderIntervyuEfir()
 	end
 	imgui.PopStyleColor(3)
 end
+
 function renderReklamaEfir()
 	imgui.Text('Эфир "Реклама"')
 	imgui.Separator()
 	local bg = settings.colors.background
 	local item = settings.colors.itemButtons
 	local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
-	local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
-	local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
 	imgui.Text('Интервал для начала/конца (мс):')
 	imgui.SameLine()
 	local intervalValue = efir.intervals.reklama[0]
 	local digitCount = string.len(tostring(intervalValue))
 	local inputWidth = math.max(60, digitCount * 10 + 20)
 	imgui.PushItemWidth(inputWidth)
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	imgui.SameLine()
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
@@ -4242,7 +5485,6 @@ function renderReklamaEfir()
 		efir.intervals.reklama[0] = math.max(1000, efir.intervals.reklama[0] - 100)
 		saveConfig()
 	end
-	imgui.PopStyleColor(3)
 	imgui.SameLine()
 	if imgui.InputInt('##IntervalReklama', efir.intervals.reklama, 0, 0) then
 		if efir.intervals.reklama[0] < 1000 then efir.intervals.reklama[0] = 1000 end
@@ -4266,9 +5508,6 @@ function renderReklamaEfir()
 	local linesDigitCount = string.len(tostring(linesIntervalValue))
 	local linesInputWidth = math.max(60, linesDigitCount * 10 + 20)
 	imgui.PushItemWidth(linesInputWidth)
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	imgui.SameLine()
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
@@ -4277,7 +5516,6 @@ function renderReklamaEfir()
 		efir.intervals.reklamaLines[0] = math.max(1000, efir.intervals.reklamaLines[0] - 100)
 		saveConfig()
 	end
-	imgui.PopStyleColor(3)
 	imgui.SameLine()
 	if imgui.InputInt('##IntervalReklamaLines', efir.intervals.reklamaLines, 0, 0) then
 		if efir.intervals.reklamaLines[0] < 1000 then efir.intervals.reklamaLines[0] = 1000 end
@@ -4298,26 +5536,34 @@ function renderReklamaEfir()
 	imgui.Spacing()
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
 	if fa_font then imgui.PushFont(fa_font) end
 	if imgui.Button(fa('play') .. ' Начать эфир', imgui.ImVec2(100, 25)) then
 		if fa_font then imgui.PopFont() end
 		startEfir('reklama')
+		efir.confirmFinishEfir = false
 	end
 	if fa_font then imgui.PopFont() end
-	imgui.PopStyleColor(3)
+	imgui.PopStyleColor(2)
 	imgui.SameLine()
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.4, 0.2, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.5, 0.3, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.3, 0.1, 1))
 	if fa_font then imgui.PushFont(fa_font) end
-	if imgui.Button(fa('flag_checkered') .. ' Завершить эфир', imgui.ImVec2(135, 25)) then
+	if imgui.Button(fa('flag_checkered') .. ' Завершить', imgui.ImVec2(100, 25)) then
 		if fa_font then imgui.PopFont() end
-		if efir.control.running then
-			endEfir()
+		if not efir.confirmFinishEfir then
+			efir.confirmFinishEfir = true
 		else
-			chatMessage(u8:decode('[News Helper] Эфир не запущен'), 0xFF0000)
+			if efir.control.running then
+				stopEfir()
+			else
+				chatMessage(u8:decode('[News Helper] Эфир не запущен'), 0xFF0000)
+			end
+			efir.confirmFinishEfir = false
 		end
+	end
+	if efir.confirmFinishEfir and imgui.IsItemHovered() then
+		imgui.SetTooltip('Нажмите еще раз для подтверждения')
 	end
 	if fa_font then imgui.PopFont() end
 	imgui.PopStyleColor(3)
@@ -4328,7 +5574,9 @@ function renderReklamaEfir()
 	if fa_font then imgui.PushFont(fa_font) end
 	if imgui.Button(fa('stop') .. ' Закончить эфир', imgui.ImVec2(120, 25)) then
 		if fa_font then imgui.PopFont() end
+		_G.currentEfirType = 'reklama'
 		endEfir()
+		efir.confirmFinishEfir = false
 	end
 	if fa_font then imgui.PopFont() end
 	imgui.PopStyleColor(3)
@@ -4343,11 +5591,7 @@ function renderReklamaEfir()
 	local minHeight = 100
 	local lineHeight = 18
 	local calculatedHeight = math.max(minHeight, lineCount * lineHeight + 20)
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	imgui.InputTextMultiline('##ReklamaText', efir.inputs.reklamaText, 1024, imgui.ImVec2(-1, calculatedHeight))
-	imgui.PopStyleColor(3)
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
@@ -4380,39 +5624,47 @@ function renderSobesEfir()
 	local item = settings.colors.itemButtons
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
 	if fa_font then imgui.PushFont(fa_font) end
 	if imgui.Button(fa('play') .. ' Начать объявление', imgui.ImVec2(150, 25)) then
-		if fa_font then imgui.PopFont() end
+	if fa_font then imgui.PopFont() end
 		startEfir('sobes')
+		efir.confirmEndEfir = false
+	end
+	if fa_font then imgui.PopFont() end
+	imgui.PopStyleColor(2)
+	imgui.SameLine()
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.6, 0.2, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.7, 0.3, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.5, 0.1, 1))
+	if fa_font then imgui.PushFont(fa_font) end
+	if imgui.Button(fa('stop') .. ' Завершить объявление', imgui.ImVec2(160, 25)) then
+		if fa_font then imgui.PopFont() end
+		_G.currentEfirType = 'sobes'
+		endEfir()
+		efir.control.shouldEnd = true
 	end
 	if fa_font then imgui.PopFont() end
 	imgui.PopStyleColor(3)
 	imgui.SameLine()
-	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.4, 0.2, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.5, 0.3, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.3, 0.1, 1))
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.2, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.3, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.1, 0.1, 1))
 	if fa_font then imgui.PushFont(fa_font) end
-	if imgui.Button(fa('flag_checkered') .. ' Завершить эфир', imgui.ImVec2(135, 25)) then
+	if imgui.Button(fa('flag_checkered') .. ' Завершить', imgui.ImVec2(100, 25)) then
 		if fa_font then imgui.PopFont() end
-		if efir.control.running then
-			endEfir()
+		if not efir.confirmEndEfir then
+			efir.confirmEndEfir = true
 		else
-			chatMessage(u8:decode('[News Helper] Эфир не запущен'), 0xFF0000)
+			if efir.control.running then
+				stopEfir()
+			else
+				chatMessage(u8:decode('[News Helper] Эфир не запущен'), 0xFF0000)
+			end
+			efir.confirmEndEfir = false
 		end
 	end
-	if fa_font then imgui.PopFont() end
-	imgui.PopStyleColor(3)
-	imgui.SameLine()
-	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
-	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
-	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
-	if fa_font then imgui.PushFont(fa_font) end
-	if imgui.Button(fa('stop') .. ' Завершить объявление', imgui.ImVec2(180, 25)) then
-		if fa_font then imgui.PopFont() end
-		if efir.control.running then
-			efir.control.shouldEnd = true
-		end
+	if efir.confirmEndEfir and imgui.IsItemHovered() then
+		imgui.SetTooltip('Нажмите еще раз для подтверждения')
 	end
 	if fa_font then imgui.PopFont() end
 	imgui.PopStyleColor(3)
@@ -4420,19 +5672,112 @@ function renderSobesEfir()
 	imgui.TextWrapped('Эфир для объявления о собеседовании в СМИ')
 end
 function renderScoreBoard()
+	if efir.auto.active then
+		imgui.Spacing()
+		imgui.BeginChild('##AutoScoreBoard', imgui.ImVec2(-1, 100), true)
+		imgui.Text('Таблица баллов:')
+		imgui.Separator()
+		local sortedScores = {}
+		for name, score in pairs(efir.counter) do
+			table.insert(sortedScores, {name = name, score = score})
+		end
+		table.sort(sortedScores, function(a, b) return a.score > b.score end)
+		local colors = {
+			imgui.ImVec4(1.0, 0.84, 0.0, 1),
+			imgui.ImVec4(0.75, 0.75, 0.75, 1),
+			imgui.ImVec4(0.8, 0.6, 0.2, 1),
+			imgui.ImVec4(1.0, 1.0, 1.0, 1)
+		}
+		if #sortedScores == 0 then
+			imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Пока никто не набрал баллов')
+		else
+			for place, playerData in ipairs(sortedScores) do
+				if place <= 4 then
+					imgui.TextColored(colors[place], string.format("%d. %s = %d", place, playerData.name, playerData.score))
+				else
+					imgui.Text(string.format("%d. %s = %d", place, playerData.name, playerData.score))
+				end
+			end
+		end
+		imgui.EndChild()
+		return
+	end
+	if efir.auto.updating then
+		imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Обновление данных...')
+		return
+	end
 	imgui.Spacing()
 	imgui.BeginChild('##ScoreBoard', imgui.ImVec2(-1, 100), true)
 	imgui.Text('Таблица баллов:')
 	imgui.Separator()
-	local hasPlayers = false
+	local sortedScores = {}
 	for name, score in pairs(efir.counter) do
-		imgui.Text(name .. ' = ' .. tostring(score))
-		hasPlayers = true
+		table.insert(sortedScores, {name = name, score = score})
 	end
-	if not hasPlayers then
+	table.sort(sortedScores, function(a, b) return a.score > b.score end)
+	local colors = {
+		imgui.ImVec4(1.0, 0.84, 0.0, 1),
+		imgui.ImVec4(0.75, 0.75, 0.75, 1),
+		imgui.ImVec4(0.8, 0.6, 0.2, 1),
+		imgui.ImVec4(1.0, 1.0, 1.0, 1)
+	}
+	if #sortedScores == 0 then
 		imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Пока никто не набрал баллов')
+	else
+		for place, playerData in ipairs(sortedScores) do
+			if place <= 4 then
+				imgui.TextColored(colors[place], string.format("%d. %s = %d", place, playerData.name, playerData.score))
+			else
+				imgui.Text(string.format("%d. %s = %d", place, playerData.name, playerData.score))
+			end
+		end
 	end
 	imgui.EndChild()
+	imgui.Spacing()
+	local item = settings.colors.itemButtons
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.2, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.3, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.1, 0.1, 1))
+	if fa_font then imgui.PushFont(fa_font) end
+	if imgui.Button(fa('trash_can') .. ' Очистить баллы', imgui.ImVec2(-1, 25)) then
+		if fa_font then imgui.PopFont() end
+		clearScoreboard()
+	end
+	imgui.PopStyleColor(3)
+end
+function clearScoreboard()
+	queueClearScore()
+	efir.counter = {}
+	efir.lastBallVariant = {}
+	chatMessage(u8:decode('[News Helper] Таблица баллов очищена'), 0x00FF00)
+end
+function renderAutoEfirScoreBoard()
+	imgui.Spacing()
+	imgui.Separator()
+	imgui.Spacing()
+	imgui.Text('Таблица баллов:')
+	local sortedScores = {}
+	for name, score in pairs(efir.counter) do
+		table.insert(sortedScores, {name = name, score = score})
+	end
+	table.sort(sortedScores, function(a, b) return a.score > b.score end)
+	local colors = {
+		imgui.ImVec4(1.0, 0.84, 0.0, 1),
+		imgui.ImVec4(0.75, 0.75, 0.75, 1),
+		imgui.ImVec4(0.8, 0.6, 0.2, 1),
+		imgui.ImVec4(1.0, 1.0, 1.0, 1)
+	}
+	if #sortedScores == 0 then
+		imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Пока никто не набрал баллов')
+	else
+		for place, playerData in ipairs(sortedScores) do
+			if place <= 4 then
+				imgui.TextColored(colors[place], string.format("%d. %s = %d", place, playerData.name, playerData.score))
+			else
+				imgui.Text(string.format("%d. %s = %d", place, playerData.name, playerData.score))
+			end
+		end
+	end
 end
 function deepCopy(orig)
 	local orig_type = type(orig)
@@ -4560,6 +5905,131 @@ function resetEditorHistory()
 	editor.historyIndex = 0
 	addToHistory()
 end
+function loadBinder()
+	local path = settings.configFolder .. 'Binder.json'
+	if doesFileExist(path) then
+		local file = io.open(path, 'r')
+		if file then
+			local content = file:read('*a')
+			file:close()
+			local data = decodeJson(content)
+			if data then
+				binder.list = data
+				for _, bind in ipairs(binder.list) do
+					if bind.command and bind.command ~= "" then
+						sampRegisterChatCommand(bind.command, function()
+							executeBinder(bind)
+						end)
+					end
+				end
+				return true
+			end
+		end
+	end
+	binder.list = {
+		{
+			name = "Редактор",
+			hotkey = {vk.VK_Q},
+			command = "",
+			enableOnChat = false,
+			enableOnDialog = false,
+			requireConfirm = false,
+			blockKey = false,
+			mode = 1,
+			delay = 0,
+			lines = {
+				{text = "/edit", delay = 0}
+			},
+			squareText = "/edit",
+			confirmed = false
+		}
+	}
+	saveBinder()
+	return false
+end
+function saveBinder()
+	local data = {}
+	for _, bind in ipairs(binder.list) do
+		local bindData = {
+			name = bind.name or "без названия",
+			hotkey = bind.hotkey or {},
+			command = bind.command or "",
+			enableOnChat = bind.enableOnChat or false,
+			enableOnDialog = bind.enableOnDialog or false,
+			requireConfirm = bind.requireConfirm or false,
+			blockKey = bind.blockKey or false,
+			mode = bind.mode or 1,
+			delay = bind.delay or 3000,
+			lines = {},
+			squareText = bind.squareText or ""
+		}
+		if bind.lines then
+			for _, line in ipairs(bind.lines) do
+				table.insert(bindData.lines, {
+					text = line.text or ""
+				})
+			end
+		end
+		table.insert(data, bindData)
+	end
+	local path = settings.configFolder .. 'Binder.json'
+	local file = io.open(path, 'w')
+	if file then
+		file:write(encodeJson(data))
+		file:close()
+		return true
+	end
+	return false
+end
+function saveRSSettings()
+	local data={
+		interactionKey=rsSettings.interactionKey,
+		actions={}
+	}
+	for key,action in pairs(rsSettings.actions) do
+		data.actions[key]={
+			name=action.name,
+			lines=action.lines,
+			delay=action.delay,
+			needInput=action.needInput,
+			inputPlaceholder=action.inputPlaceholder
+		}
+	end
+	local filePath=settings.configFolder..'RSSettings.json'
+	local file=io.open(filePath,'w')
+	if file then
+		file:write(encodeJson(data))
+		file:close()
+		return true
+	end
+	return false
+end
+function loadRSSettings()
+	local filePath=settings.configFolder..'RSSettings.json'
+	if doesFileExist(filePath) then
+		local file=io.open(filePath,'r')
+		if file then
+			local content=file:read('*a')
+			file:close()
+			local data=decodeJson(content)
+			if data then
+				if data.interactionKey then
+					rsSettings.interactionKey=data.interactionKey
+				end
+				if data.actions then
+					for key,actionData in pairs(data.actions) do
+						if rsSettings.actions[key] then
+							rsSettings.actions[key].lines=actionData.lines or rsSettings.actions[key].lines
+							rsSettings.actions[key].delay=actionData.delay or rsSettings.actions[key].delay
+						end
+					end
+				end
+				return true
+			end
+		end
+	end
+	return false
+end
 function loadHelpBinds()
 	local fileName = data.selectedBindsVariant == 1 and 'news_help_binds.json' or 'news_help_binds2.json'
 	local filePath = settings.configFolder .. fileName
@@ -4613,11 +6083,6 @@ function loadEfirMessages()
 	saveEfirMessagesToFile()
 	chatMessage(u8:decode('[News Helper] Файл с сообщениями эфиров создан'), 0x00FF00)
 	return true
-end
-local function json_escape(str)
-	str = str:gsub('\\', '\\\\'):gsub('"', '\\"')
-	str = str:gsub('\n', '\\n'):gsub('\r', '\\r'):gsub('\t', '\\t')
-	return str
 end
 function saveHelpBinds()
 	if not data.newsHelpBind or type(data.newsHelpBind) ~= "table" then
@@ -4679,7 +6144,9 @@ function showCustomAdWindow(data)
 end
 function saveConfig()
 	local config = {
-		windowPos = settings.windowPos, 
+		selectedTheme = settings.themes.current,
+		customThemeColors = settings.themes.list.custom.colors,
+		windowPos = settings.windowPos,
 		windowSize = settings.windowSize,
 		background = {settings.colors.background[0], settings.colors.background[1], settings.colors.background[2]},
 		categoryButtons = {settings.colors.categoryButtons[0], settings.colors.categoryButtons[1], settings.colors.categoryButtons[2]},
@@ -4703,11 +6170,12 @@ function saveConfig()
 		customBinds = data.customBinds,
 		pauseEfirHotkey = efir.control.pauseHotkey,
 		starJumpKey = settings.starJumpKey,
+		autoRPEnabled = autoRP.enabled[0],
 		silentMode = settings.silentMode[0],
 		devMode = isDevMode,
 		efirSettings = {
 			lastPrize = ffi.string(efir.inputs.money),
-			userGender = user.radioInt[0]
+			userGender = user.gender[0]
 		},
 		autospawnEnabled = flags.autospawnEnabled[0],
 		selectedBindsVariant = data.selectedBindsVariant,
@@ -4724,21 +6192,44 @@ function saveConfig()
 			last_ustav_version = data.devConfig.last_ustav_version,
 			last_pps_version = data.devConfig.last_pps_version,
 			last_nts_version = data.devConfig.last_nts_version
-		}
+		},
+		efirQuestions = {}
 	}
 	local efirIntervals = {}
 	for key, value in pairs(efir.intervals) do
 		efirIntervals[key] = value[0]
 	end
 	config.efirIntervals = efirIntervals
+	for efirType, examples in pairs(efir.examples) do
+		if examples then
+			config.efirQuestions[efirType] = {
+				examples = {},
+				answers = {}
+			}
+			for i = 1, efirLineCount[efirType] or 10 do
+				if examples[i] then
+					local exStr = ffi.string(examples[i])
+					if exStr ~= "" then
+						config.efirQuestions[efirType].examples[tostring(i)] = exStr
+					end
+				end
+				if efir.answers[efirType] and efir.answers[efirType][i] then
+					local ansStr = ffi.string(efir.answers[efirType][i])
+					if ansStr ~= "" then
+						config.efirQuestions[efirType].answers[tostring(i)] = ansStr
+					end
+				end
+			end
+		end
+	end
 	local jsonText = encodeJson(config)
 	if not jsonText then
 		chatMessage(u8:decode('[News Helper] Ошибка кодирования конфига в JSON!'), 0xFF0000)
 		return false
 	end
 	local file = io.open(settings.configFolder .. 'news_helper_config.json', 'w')
-	if file then 
-		file:write(jsonText) 
+	if file then
+		file:write(jsonText)
 		file:close()
 		return true
 	else
@@ -4749,22 +6240,29 @@ end
 function loadConfig()
 	local file = io.open(settings.configFolder .. 'news_helper_config.json', 'r')
 	if file then
-		local content = file:read('*a'); file:close()
+		local content = file:read('*a')
+		file:close()
 		local config = decodeJson(content)
 		if config then
 			if config.windowPos then settings.windowPos = config.windowPos end
 			if config.windowSize then settings.windowSize = config.windowSize end
-			if config.background then 
+			if config.background then
 				settings.colors.background[0], settings.colors.background[1], settings.colors.background[2] =
 					config.background[1], config.background[2], config.background[3]
 			end
-			if config.categoryButtons then 
+			if config.categoryButtons then
 				settings.colors.categoryButtons[0], settings.colors.categoryButtons[1], settings.colors.categoryButtons[2] =
 					config.categoryButtons[1], config.categoryButtons[2], config.categoryButtons[3]
 			end
-			if config.itemButtons then 
+			if config.itemButtons then
 				settings.colors.itemButtons[0], settings.colors.itemButtons[1], settings.colors.itemButtons[2] =
 					config.itemButtons[1], config.itemButtons[2], config.itemButtons[3]
+			end
+			if config.selectedTheme then
+				settings.themes.current = config.selectedTheme
+			end
+			if config.customThemeColors then
+				settings.themes.list.custom.colors = config.customThemeColors
 			end
 			if config.maxBufferSize then settings.maxBufferSize = config.maxBufferSize end
 			if config.membersCheckerPos then settings.checker.pos = config.membersCheckerPos end
@@ -4806,10 +6304,13 @@ function loadConfig()
 					end
 				end
 			end
+			if config.autoRPEnabled ~= nil then
+				autoRP.enabled[0] = config.autoRPEnabled
+			end
 			if config.devMode ~= nil then isDevMode = config.devMode end
 			if config.helpHotkey and type(config.helpHotkey) == "table" then ui.hotkeys.help = config.helpHotkey end
 			if config.proHotkey and type(config.proHotkey) == "table" then ui.hotkeys.pro = config.proHotkey end
-			if config.settingsHotkey and type(config.settingsHotkey) == "table" then ui.hotkeys.settings = config.settingsHotkey end 
+			if config.settingsHotkey and type(config.settingsHotkey) == "table" then ui.hotkeys.settings = config.settingsHotkey end
 			if config.autologinEnabled ~= nil then settings.autologin.enabled[0] = config.autologinEnabled end
 			if config.autologinPassword then ffi.copy(settings.autologin.password, config.autologinPassword) end
 			if config.autologinPincode then ffi.copy(settings.autologin.pincode, config.autologinPincode) end
@@ -4821,7 +6322,10 @@ function loadConfig()
 			if config.silentMode ~= nil then settings.silentMode[0] = config.silentMode end
 			if config.efirSettings then
 				if config.efirSettings.lastPrize then ffi.copy(efir.inputs.money, config.efirSettings.lastPrize) end
-				if config.efirSettings.userGender then user.radioInt[0] = config.efirSettings.userGender end
+				if config.efirSettings.userGender then 
+					user.gender[0] = config.efirSettings.userGender
+					user.radioInt[0] = config.efirSettings.userGender
+				end
 			end
 			if config.customBinds then
 				data.customBinds = config.customBinds
@@ -4839,12 +6343,54 @@ function loadConfig()
 				data.mainIni.config.c_pol = config.userSettings.c_pol or 2
 				data.mainIni.config.wave_tag = config.userSettings.wave_tag or "VaF"
 				ffi.copy(user.waveTag, data.mainIni.config.wave_tag)
+				if config.userSettings.c_cnn then
+					ffi.fill(user.org, ffi.sizeof(user.org))
+					ffi.copy(user.org, config.userSettings.c_cnn)
+				end
+				if config.userSettings.c_city_n then
+					ffi.fill(user.city, ffi.sizeof(user.city))
+					ffi.copy(user.city, config.userSettings.c_city_n)
+				end
 			end
 			if config.devConfig then
 				data.devConfig.last_pro_version = config.devConfig.last_pro_version or 0
 				data.devConfig.last_ustav_version = config.devConfig.last_ustav_version or 0
 				data.devConfig.last_pps_version = config.devConfig.last_pps_version or 0
 				data.devConfig.last_nts_version = config.devConfig.last_nts_version or 0
+			end
+			if config.efirQuestions then
+				for efirType, qdata in pairs(config.efirQuestions) do
+					if not efir.examples[efirType] then
+						efir.examples[efirType] = {}
+					end
+					if not efir.answers[efirType] then
+						efir.answers[efirType] = {}
+					end
+					for i = 1, (efirLineCount[efirType] or 10) do
+						if not efir.examples[efirType][i] then
+							efir.examples[efirType][i] = imgui.new.char[256]()
+						end
+						if not efir.answers[efirType][i] then
+							efir.answers[efirType][i] = imgui.new.char[256]()
+						end
+					end
+					if qdata.examples then
+						for i = 1, (efirLineCount[efirType] or 10) do
+							local example = qdata.examples[tostring(i)]
+							if example and example ~= "" then
+								ffi.copy(efir.examples[efirType][i], example)
+							end
+						end
+					end
+					if qdata.answers then
+						for i = 1, (efirLineCount[efirType] or 10) do
+							local answer = qdata.answers[tostring(i)]
+							if answer and answer ~= "" then
+								ffi.copy(efir.answers[efirType][i], answer)
+							end
+						end
+					end
+				end
 			end
 		end
 	end
@@ -4883,10 +6429,13 @@ function saveEfirMessagesToFile()
 	end
 end
 function updateMembersList()
+	if windows.customAd[0] then return end
 	if not sampIsLocalPlayerSpawned() then return end
 	if not settings.checker.enabled[0] then return end
+	if sampIsCursorActive() then return end
 	if settings.checker.waiting then 
-		if os.clock() - settings.checker.requestTime > settings.checker.timeout then
+		local elapsed = os.clock() - settings.checker.requestTime
+		if elapsed > settings.checker.timeout then
 			settings.checker.waiting = false
 			settings.checker.requestAttempts = settings.checker.requestAttempts + 1
 			if settings.checker.requestAttempts >= settings.checker.maxRequestAttempts then
@@ -4904,8 +6453,8 @@ function updateMembersList()
 	settings.checker.requestTime = os.clock()
 	settings.checker.lastUpdate = now
 	lua_thread.create(function()
-		wait(100)
-		if not sampIsChatInputActive() and not sampIsDialogActive() then
+		wait(300)
+		if not sampIsChatInputActive() and not sampIsDialogActive() and not sampIsCursorActive() then
 			sampSendChat("/members")
 		else
 			settings.checker.waiting = false
@@ -5011,12 +6560,6 @@ function ensureJsonFiles()
 						local msg3 = string.format("[News Helper] Ошибка сохранения %s", file.name)
 						sampAddChatMessage(u8:decode(msg3), 0xFF0000)
 					end
-				else
-					local msg4 = string.format("[News Helper] Ошибка загрузки %s", file.name)
-					sampAddChatMessage(u8:decode(msg4), 0xFF0000)
-					if file.name == "EfirMessages.json" then
-						loadDefaultEfirMessages()
-					end
 				end
 			end)
 		end
@@ -5029,119 +6572,267 @@ function reloadEfirMessages()
 	end
 	loadEfirMessages()
 end
-local function trim(s)
-	return (s or ""):match("^%s*(.-)%s*$")
-end
-local function getPlayerPlatform(playerId)
-	if not sampIsPlayerConnected(playerId) then return nil end
-	local fullNick = sampGetPlayerNickname(playerId)
-	if not fullNick then return nil end
-	if fullNick:find("%[PC%]") then
-		return "PC"
-	elseif fullNick:find("%[M%]") then
-		return "M"
+function applyStyle()
+	local style = imgui.GetStyle()
+	local colors = style.Colors
+	style.WindowRounding = 8
+	style.FrameRounding = 4
+	style.ScrollbarRounding = 4
+	style.WindowBorderSize = 0
+	
+	local currentColors = settings.themes.list.custom.colors
+	if not currentColors or not next(currentColors) then
+		currentColors = settings.themes.list.default.colors
 	end
-	return nil
-end
-local function parseMembers(raw_text)
-	local members = {}
-	if type(raw_text) ~= "string" then return members end
-	local lines = {}
-	for line in raw_text:gmatch("[^\r\n]+") do
-		table.insert(lines, line)
+	if currentColors.TitleBgActive then
+		currentColors.TitleBg = {
+			currentColors.TitleBgActive[1] * 0.7,
+			currentColors.TitleBgActive[2] * 0.7,
+			currentColors.TitleBgActive[3] * 0.7,
+			currentColors.TitleBgActive[4]
+		}
 	end
-	for i = 1, #lines do
-		local raw = lines[i]
-		local cleanLine = raw:gsub("{%x%x%x%x%x%x}", "")
-		cleanLine = trim(cleanLine)
-		if cleanLine ~= "" and cleanLine:match("^%d+%.") then
-			local parts = {}
-			for part in cleanLine:gmatch("[^|]+") do
-				table.insert(parts, trim(part))
-			end
-			if #parts >= 4 then
-				local num, pos, rank = parts[1]:match("^(%d+)%.%s*(.-)%[(%d+)%]")
-				local name, id = parts[2]:match("^([%w_]+)%s*%[(%d+)%]")
-				local phone = parts[3] or "N/A"
-				local warns = parts[4] or "0/0"
-				local afk, mute, noUniform = nil, nil, false
-				local extra = ""
-				if #parts > 4 then
-					for j = 5, #parts do
-						extra = extra .. " " .. parts[j]
-					end
-				end
-				extra = trim(extra:gsub("{%x%x%x%x%x%x}", ""))
-				extra = cp1251_to_utf8(extra)
-				local afkMatch = extra:match("[Aa][Ff][Kk]:?%s*([%w:%s]+)")
-				if afkMatch then
-					afk = trim(afkMatch)
-					extra = extra:gsub("[Aa][Ff][Kk]:?%s*[%w:%s]+", "")
-					extra = trim(extra)
-				end
-				local muteMatch = extra:match("[Вв]%s*муте%s*%(*%s*([%d:]+)%s*%)")
-				if not muteMatch then
-					muteMatch = extra:match("муте%s*%(*%s*([%d:]+)%s*%)")
-				end
-				if not muteMatch then
-					muteMatch = extra:match("[Mm][Uu][Tt][Ee]%s*%(*%s*([%d:]+)%s*%)")
-				end
-				if muteMatch then
-					mute = trim(muteMatch)
-					extra = extra:gsub("[Вв]%s*муте%s*%(*%s*[%d:]+%s*%)", "")
-					extra = trim(extra)
-				end
-				if extra:lower():find("без формы") then
-					noUniform = true
-					extra = extra:gsub("[Бб]ез формы", "")
-					extra = trim(extra)
-				end
-				local isOffline = false
-				if pos and pos:find("^%-") then
-					isOffline = true
-				end
-				local platform = nil
-				if num and name and id then
-					local playerId = tonumber(id)
-					if playerId then
-						platform = getPlayerPlatform(playerId)
-					end
-					table.insert(members, {
-						num = tonumber(num) or 0,
-						position = cp1251_to_utf8(pos or "N/A"),
-						rank = tonumber(rank) or 0,
-						name = cp1251_to_utf8(name),
-						id = tonumber(id) or 0,
-						phone = phone or "N/A",
-						warns = warns or "0/0",
-						afk = afk,
-						mute = mute,
-						online = not isOffline,
-						noUniform = noUniform,
-						platform = platform
-					})
-				end
+	if currentColors.ScrollbarGrab then
+		currentColors.ScrollbarBg = {
+			currentColors.ScrollbarGrab[1] * 0.3,
+			currentColors.ScrollbarGrab[2] * 0.3,
+			currentColors.ScrollbarGrab[3] * 0.3,
+			0.53
+		}
+		currentColors.ScrollbarGrabHovered = {
+			math.min(currentColors.ScrollbarGrab[1] * 1.2, 1),
+			math.min(currentColors.ScrollbarGrab[2] * 1.2, 1),
+			math.min(currentColors.ScrollbarGrab[3] * 1.2, 1),
+			currentColors.ScrollbarGrab[4]
+		}
+		currentColors.ScrollbarGrabActive = {
+			math.min(currentColors.ScrollbarGrab[1] * 1.4, 1),
+			math.min(currentColors.ScrollbarGrab[2] * 1.4, 1),
+			math.min(currentColors.ScrollbarGrab[3] * 1.4, 1),
+			currentColors.ScrollbarGrab[4]
+		}
+	end
+	
+	if currentColors.FrameBgHovered then
+		currentColors.FrameBg = {
+			currentColors.FrameBgHovered[1] * 0.85,
+			currentColors.FrameBgHovered[2] * 0.85,
+			currentColors.FrameBgHovered[3] * 0.85,
+			currentColors.FrameBgHovered[4]
+		}
+	end
+	local validImGuiColors = {
+		"Text", "TextDisabled", "WindowBg", "ChildBg", "PopupBg", "Border", "BorderShadow",
+		"FrameBg", "FrameBgHovered", "FrameBgActive", "TitleBg", "TitleBgActive", "TitleBgCollapsed",
+		"MenuBarBg", "ScrollbarBg", "ScrollbarGrab", "ScrollbarGrabHovered", "ScrollbarGrabActive",
+		"CheckMark", "SliderGrab", "SliderGrabActive", "Button", "ButtonHovered", "ButtonActive",
+		"Header", "HeaderHovered", "HeaderActive", "Separator", "SeparatorHovered", "SeparatorActive",
+		"ResizeGrip", "ResizeGripHovered", "ResizeGripActive", "Tab", "TabHovered", "TabActive",
+		"TabUnfocused", "TabUnfocusedActive", "PlotLines", "PlotLinesHovered", "PlotHistogram",
+		"PlotHistogramHovered", "TextSelectedBg", "DragDropTarget", "NavHighlight", "NavWindowingHighlight",
+		"NavWindowingDimBg", "ModalWindowDimBg"
+	}
+	for _, colorName in ipairs(validImGuiColors) do
+		if currentColors[colorName] then
+			local colIdx = imgui.Col[colorName]
+			if colIdx then
+				local colorValue = currentColors[colorName]
+				colors[colIdx] = imgui.ImVec4(colorValue[1], colorValue[2], colorValue[3], colorValue[4])
 			end
 		end
 	end
-	return members
+	if currentColors.Button then
+		settings.colors.itemButtons[0] = currentColors.Button[1]
+		settings.colors.itemButtons[1] = currentColors.Button[2]
+		settings.colors.itemButtons[2] = currentColors.Button[3]
+		settings.colors.itemButtons[3] = currentColors.Button[4]
+	end
+	if currentColors.CategoryColor then
+		settings.colors.categoryButtons[0] = currentColors.CategoryColor[1]
+		settings.colors.categoryButtons[1] = currentColors.CategoryColor[2]
+		settings.colors.categoryButtons[2] = currentColors.CategoryColor[3]
+		colors[imgui.Col.Header] = imgui.ImVec4(
+			currentColors.CategoryColor[1], 
+			currentColors.CategoryColor[2], 
+			currentColors.CategoryColor[3], 
+			0.31
+		)
+		colors[imgui.Col.HeaderHovered] = imgui.ImVec4(
+			math.min(currentColors.CategoryColor[1] * 1.2, 1),
+			math.min(currentColors.CategoryColor[2] * 1.2, 1),
+			math.min(currentColors.CategoryColor[3] * 1.2, 1),
+			0.8
+		)
+		colors[imgui.Col.HeaderActive] = imgui.ImVec4(
+			math.min(currentColors.CategoryColor[1] * 1.4, 1),
+			math.min(currentColors.CategoryColor[2] * 1.4, 1),
+			math.min(currentColors.CategoryColor[3] * 1.4, 1),
+			1
+		)
+	end
+	if currentColors.WindowBg then
+		settings.colors.background[0] = currentColors.WindowBg[1]
+		settings.colors.background[1] = currentColors.WindowBg[2]
+		settings.colors.background[2] = currentColors.WindowBg[3]
+	end
 end
-function applyStyle()
+function applyTheme()
 	local style = imgui.GetStyle()
-	local colors, clr, ImVec4 = style.Colors, imgui.Col, imgui.ImVec4
-	style.WindowRounding, style.FrameRounding, style.ScrollbarRounding, style.WindowBorderSize = 8, 4, 4, 0
-	local bg = settings.colors.background
-	local cat = settings.colors.categoryButtons
-	colors[clr.Text] = ImVec4(1, 1, 1, 1)
-	colors[clr.WindowBg] = ImVec4(bg[0], bg[1], bg[2], 0.95)
-	colors[clr.FrameBg] = ImVec4(cat[0], cat[1], cat[2], 1)
-	colors[clr.FrameBgHovered] = ImVec4(cat[0] * 1.2, cat[1] * 1.2, cat[2] * 1.2, 1)
-	colors[clr.FrameBgActive] = ImVec4(cat[0] * 1.4, cat[1] * 1.4, cat[2] * 1.4, 1)
-	colors[clr.TitleBg] = ImVec4(cat[0], cat[1], cat[2], 1)
-	colors[clr.TitleBgActive] = ImVec4(cat[0] * 1.1, cat[1] * 1.1, cat[2] * 1.1, 1)
-	colors[clr.Header] = ImVec4(cat[0] * 1.1, cat[1] * 1.1, cat[2] * 1.1, 1)
-	colors[clr.HeaderHovered] = ImVec4(cat[0] * 1.3, cat[1] * 1.3, cat[2] * 1.3, 1)
-	colors[clr.HeaderActive] = ImVec4(cat[0] * 1.5, cat[1] * 1.5, cat[2] * 1.5, 1)
+	local theme = settings.themes.list[settings.themes.current]
+	if not theme or settings.themes.current == "custom" then return end
+	local colors = style.Colors
+	for k, v in pairs(theme.colors) do
+		if imgui.Col[k] then
+			colors[imgui.Col[k]] = imgui.ImVec4(v[1], v[2], v[3], v[4])
+		end
+	end
+	style.FrameRounding = 5
+end
+function setupSliderStyle()
+	local currentThemeColors = settings.themes.list.custom.colors
+	if not currentThemeColors or not next(currentThemeColors) then
+		currentThemeColors = settings.themes.list.default.colors
+	end
+	local sliderBgColor = currentThemeColors["FrameBgHovered"] or {0.16, 0.29, 0.48, 0.54}
+	local sliderBgHoveredColor = {
+		math.min(sliderBgColor[1] * 1.2, 1),
+		math.min(sliderBgColor[2] * 1.2, 1),
+		math.min(sliderBgColor[3] * 1.2, 1),
+		sliderBgColor[4]
+	}
+	local sliderBgActiveColor = {
+		math.min(sliderBgColor[1] * 1.4, 1),
+		math.min(sliderBgColor[2] * 1.4, 1),
+		math.min(sliderBgColor[3] * 1.4, 1),
+		sliderBgColor[4]
+	}
+	imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(sliderBgColor[1], sliderBgColor[2], sliderBgColor[3], sliderBgColor[4]))
+	imgui.PushStyleColor(imgui.Col.FrameBgHovered, imgui.ImVec4(sliderBgHoveredColor[1], sliderBgHoveredColor[2], sliderBgHoveredColor[3], sliderBgHoveredColor[4]))
+	imgui.PushStyleColor(imgui.Col.FrameBgActive, imgui.ImVec4(sliderBgActiveColor[1], sliderBgActiveColor[2], sliderBgActiveColor[3], sliderBgActiveColor[4]))
+end
+function cleanupSliderStyle()
+	imgui.PopStyleColor(3)
+end
+function setupInputFieldStyle()
+	local currentThemeColors = settings.themes.list.custom.colors
+	if not currentThemeColors or not next(currentThemeColors) then
+		currentThemeColors = settings.themes.list.default.colors
+	end
+	local frameBgColor = currentThemeColors["FrameBg"] or {0.16, 0.29, 0.48, 0.54}
+	local frameBgHoveredColor = {
+		math.min(frameBgColor[1] * 1.15, 1),
+		math.min(frameBgColor[2] * 1.15, 1),
+		math.min(frameBgColor[3] * 1.15, 1),
+		frameBgColor[4]
+	}
+	local frameBgActiveColor = {
+		math.min(frameBgColor[1] * 1.3, 1),
+		math.min(frameBgColor[2] * 1.3, 1),
+		math.min(frameBgColor[3] * 1.3, 1),
+		frameBgColor[4]
+	}
+	imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(frameBgColor[1], frameBgColor[2], frameBgColor[3], frameBgColor[4]))
+	imgui.PushStyleColor(imgui.Col.FrameBgHovered, imgui.ImVec4(frameBgHoveredColor[1], frameBgHoveredColor[2], frameBgHoveredColor[3], frameBgHoveredColor[4]))
+	imgui.PushStyleColor(imgui.Col.FrameBgActive, imgui.ImVec4(frameBgActiveColor[1], frameBgActiveColor[2], frameBgActiveColor[3], frameBgActiveColor[4]))
+end
+function cleanupInputFieldStyle()
+	imgui.PopStyleColor(3)
+end
+function setupCheckboxStyle()
+	local currentThemeColors = settings.themes.list.custom.colors
+	if not currentThemeColors or not next(currentThemeColors) then
+		currentThemeColors = settings.themes.list.default.colors
+	end
+	local frameBgActiveColor = currentThemeColors["FrameBgActive"] or {0.16, 0.29, 0.48, 0.54}
+	local frameBgActiveLighter = {
+		math.min(frameBgActiveColor[1] * 1.2, 1),
+		math.min(frameBgActiveColor[2] * 1.2, 1),
+		math.min(frameBgActiveColor[3] * 1.2, 1),
+		frameBgActiveColor[4]
+	}
+	local checkMarkColor = {
+		math.min(frameBgActiveColor[1] * 1.4, 1),
+		math.min(frameBgActiveColor[2] * 1.4, 1),
+		math.min(frameBgActiveColor[3] * 1.4, 1),
+		1
+	}
+	imgui.PushStyleColor(imgui.Col.CheckMark, imgui.ImVec4(checkMarkColor[1], checkMarkColor[2], checkMarkColor[3], checkMarkColor[4]))
+	imgui.PushStyleColor(imgui.Col.FrameBgActive, imgui.ImVec4(frameBgActiveLighter[1], frameBgActiveLighter[2], frameBgActiveLighter[3], frameBgActiveLighter[4]))
+	imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(frameBgActiveColor[1], frameBgActiveColor[2], frameBgActiveColor[3], frameBgActiveColor[4]))
+end
+function cleanupCheckboxStyle()
+	imgui.PopStyleColor(3)
+end
+function setupScrollbarStyle()
+	local currentThemeColors = settings.themes.list.custom.colors
+	if not currentThemeColors or not next(currentThemeColors) then
+		currentThemeColors = settings.themes.list.default.colors
+	end
+	local scrollbarGrabColor = currentThemeColors["ScrollbarGrab"] or {0.31, 0.31, 0.31, 1}
+	local scrollbarBgColor = {
+		scrollbarGrabColor[1] * 0.3,
+		scrollbarGrabColor[2] * 0.3,
+		scrollbarGrabColor[3] * 0.3,
+		0.53
+	}
+	local scrollbarGrabHoveredColor = {
+		math.min(scrollbarGrabColor[1] * 1.2, 1),
+		math.min(scrollbarGrabColor[2] * 1.2, 1),
+		math.min(scrollbarGrabColor[3] * 1.2, 1),
+		scrollbarGrabColor[4]
+	}
+	local scrollbarGrabActiveColor = {
+		math.min(scrollbarGrabColor[1] * 1.4, 1),
+		math.min(scrollbarGrabColor[2] * 1.4, 1),
+		math.min(scrollbarGrabColor[3] * 1.4, 1),
+		scrollbarGrabColor[4]
+	}
+	imgui.PushStyleColor(imgui.Col.ScrollbarBg, imgui.ImVec4(scrollbarBgColor[1], scrollbarBgColor[2], scrollbarBgColor[3], scrollbarBgColor[4]))
+	imgui.PushStyleColor(imgui.Col.ScrollbarGrab, imgui.ImVec4(scrollbarGrabColor[1], scrollbarGrabColor[2], scrollbarGrabColor[3], scrollbarGrabColor[4]))
+	imgui.PushStyleColor(imgui.Col.ScrollbarGrabHovered, imgui.ImVec4(scrollbarGrabHoveredColor[1], scrollbarGrabHoveredColor[2], scrollbarGrabHoveredColor[3], scrollbarGrabHoveredColor[4]))
+	imgui.PushStyleColor(imgui.Col.ScrollbarGrabActive, imgui.ImVec4(scrollbarGrabActiveColor[1], scrollbarGrabActiveColor[2], scrollbarGrabActiveColor[3], scrollbarGrabActiveColor[4]))
+end
+function cleanupScrollbarStyle()
+	imgui.PopStyleColor(4)
+end
+function setupHeaderStyle()
+	local currentThemeColors = settings.themes.list.custom.colors
+	if not currentThemeColors or not next(currentThemeColors) then
+		currentThemeColors = settings.themes.list.default.colors
+	end
+	local titleBgActiveColor = currentThemeColors["TitleBgActive"] or {0.16, 0.29, 0.48, 1}
+	local titleBgColor = {
+		titleBgActiveColor[1] * 0.7,
+		titleBgActiveColor[2] * 0.7,
+		titleBgActiveColor[3] * 0.7,
+		titleBgActiveColor[4]
+	}
+	local headerColor = {
+		titleBgActiveColor[1] * 0.5,
+		titleBgActiveColor[2] * 0.5,
+		titleBgActiveColor[3] * 0.5,
+		0.55
+	}
+	local headerHoveredColor = {
+		math.min(headerColor[1] * 1.3, 1),
+		math.min(headerColor[2] * 1.3, 1),
+		math.min(headerColor[3] * 1.3, 1),
+		0.8
+	}
+	local headerActiveColor = {
+		math.min(headerColor[1] * 1.5, 1),
+		math.min(headerColor[2] * 1.5, 1),
+		math.min(headerColor[3] * 1.5, 1),
+		1
+	}
+	imgui.PushStyleColor(imgui.Col.TitleBg, imgui.ImVec4(titleBgColor[1], titleBgColor[2], titleBgColor[3], titleBgColor[4]))
+	imgui.PushStyleColor(imgui.Col.TitleBgActive, imgui.ImVec4(titleBgActiveColor[1], titleBgActiveColor[2], titleBgActiveColor[3], titleBgActiveColor[4]))
+	imgui.PushStyleColor(imgui.Col.Header, imgui.ImVec4(headerColor[1], headerColor[2], headerColor[3], headerColor[4]))
+	imgui.PushStyleColor(imgui.Col.HeaderHovered, imgui.ImVec4(headerHoveredColor[1], headerHoveredColor[2], headerHoveredColor[3], headerHoveredColor[4]))
+	imgui.PushStyleColor(imgui.Col.HeaderActive, imgui.ImVec4(headerActiveColor[1], headerActiveColor[2], headerActiveColor[3], headerActiveColor[4]))
+end
+function cleanupHeaderStyle()
+	imgui.PopStyleColor(5)
 end
 function ev.onShowDialog(id, style, title, button1, button2, text)
 	if settings.autologin.enabled[0] then
@@ -5169,7 +6860,7 @@ function ev.onShowDialog(id, style, title, button1, button2, text)
 		end
 	end
 	if id == 10 then
-		if (settings.checker.enabled[0] and settings.checker.waiting) or settings.checker.detectingRank then
+		if settings.checker.waiting or settings.checker.detectingRank then
 			data.membersList = parseMembers(text)
 			if settings.checker.detectingRank then
 				settings.checker.detectingRank = false
@@ -5189,14 +6880,46 @@ function ev.onShowDialog(id, style, title, button1, button2, text)
 			end
 			settings.checker.waiting = false
 			settings.checker.requestAttempts = 0
+			settings.checker.requestTime = 0
 			sampSendDialogResponse(id, 0, -1, "")
+			return false
+		end
+		return true
+	end
+	if settings.customAd.deleteMode then
+		if id == 697 then
+			sampSendDialogResponse(697, 1, 2, "")
+			return false
+		end
+		if id == 32700 then
+			sampSendDialogResponse(32700, 1, -1, u8:decode(settings.customAd.deleteReason))
+			settings.customAd.deleteMode = false
+			settings.customAd.deleteReason = ""
+			chatMessage(u8:decode('[News Helper] Объявление удалено'), 0x00FF00)
 			return false
 		end
 		return true
 	end
 	if id == 698 then
 		local adInfo = cp1251_to_utf8(text or ""):gsub("{%x%x%x%x%x%x}", "")
-		settings.customAd.data.author = adInfo:match("Автор:%s*([%w_]+)") or "N/A"
+		local author = adInfo:match("Автор:%s*([%w_]+)") or "N/A"
+		local authorId = nil
+		local isOnline = false
+		if author ~= "N/A" then
+			for playerId = 0, sampGetMaxPlayerId() do
+				if sampIsPlayerConnected(playerId) then
+					local playerNick = sampGetPlayerNickname(playerId)
+					if playerNick and playerNick:gsub("%[PC%]", ""):gsub("%[M%]", "") == author then
+						authorId = playerId
+						isOnline = true
+						break
+					end
+				end
+			end
+		end
+		settings.customAd.data.author = author
+		settings.customAd.data.authorId = authorId
+		settings.customAd.data.isAuthorOnline = isOnline
 		settings.customAd.data.phone = adInfo:match("Номер телефона:%s*(%d+)") or "N/A"
 		settings.customAd.data.advertisement = adInfo:match("Объявление:%s*(.-)В поле ниже") or "N/A"
 		sampSetCursorMode(2)
@@ -5205,73 +6928,56 @@ function ev.onShowDialog(id, style, title, button1, button2, text)
 	end
 	return true
 end
-local function decode1251(str)
-	local t = {
-		[0xC0]='А',[0xC1]='Б',[0xC2]='В',[0xC3]='Г',[0xC4]='Д',[0xC5]='Е',[0xC6]='Ж',[0xC7]='З',[0xC8]='И',[0xC9]='Й',
-		[0xCA]='К',[0xCB]='Л',[0xCC]='М',[0xCD]='Н',[0xCE]='О',[0xCF]='П',[0xD0]='Р',[0xD1]='С',[0xD2]='Т',[0xD3]='У',
-		[0xD4]='Ф',[0xD5]='Х',[0xD6]='Ц',[0xD7]='Ч',[0xD8]='Ш',[0xD9]='Щ',[0xDA]='Ъ',[0xDB]='Ы',[0xDC]='Ь',[0xDD]='Э',
-		[0xDE]='Ю',[0xDF]='Я',[0xE0]='а',[0xE1]='б',[0xE2]='в',[0xE3]='г',[0xE4]='д',[0xE5]='е',[0xE6]='ж',[0xE7]='з',
-		[0xE8]='и',[0xE9]='й',[0xEA]='к',[0xEB]='л',[0xEC]='м',[0xED]='н',[0xEE]='о',[0xEF]='п',[0xF0]='р',[0xF1]='с',
-		[0xF2]='т',[0xF3]='у',[0xF4]='ф',[0xF5]='х',[0xF6]='ц',[0xF7]='ч',[0xF8]='ш',[0xF9]='щ',[0xFA]='ъ',[0xFB]='ы',
-		[0xFC]='ь',[0xFD]='э',[0xFE]='ю',[0xFF]='я'
-	}
-	local out = {}
-	for i = 1, #str do
-		local b = string.byte(str, i)
-		if b < 128 then
-			out[#out+1] = string.char(b)
-		else
-			out[#out+1] = t[b] or '?'
-		end
-	end
-	return table.concat(out)
-end
-
 function ev.onServerMessage(clr, message)
 	message = decode1251(message)
 	if settings.autologin.enabled[0] and message:find("Неверный пароль") then
 		settings.autologin.badPassword = true
 	end
-	if chatIdEnabled then
-		local isSmsMessage = message:match("SMS:") and message:match("Отправитель:")
-		if isSmsMessage then
-			local toChange = false
-			local modifiedText = message
-			for id, name in pairs(chatIdPlayers) do
-				if string.find(modifiedText, name) and not string.find(modifiedText, string.format('%s%%[%d%%]', name, id)) then
-					modifiedText = string.gsub(modifiedText, name, string.format('%s[%d]', name, id))
-					toChange = true
+	local originalMessage = message
+	if efir.auto.active and efir.auto.waitingForAnswer then
+		local smsText = originalMessage:match("SMS:%s*(.-)%s*Отправитель:")
+		local sender = originalMessage:match("Отправитель:%s*([%w_%.%[%]%-]+)")
+		if smsText and sender then
+			sender = sender:gsub("%[.-]%s*$", ""):gsub("^%s+", ""):gsub("%s+$", "")
+			local senderCopy = tostring(sender)
+			if senderCopy and #senderCopy > 0 then
+				if processAutoAnswer(smsText, senderCopy, senderCopy) then
+					local modifiedMsg = addIdToSMS(originalMessage)
+					modifiedMsg = modifiedMsg:gsub("{%x%x%x%x%x%x}", ""):gsub("{%x%x%x%x%x%x%x%x}", ""):gsub("{%x%x%x%x%x}", "")
+					sampAddChatMessage(u8:decode(escapeProblematicChars(modifiedMsg)), 0xFFFF00)
+					return false
 				end
-			end
-			if toChange then
-				sampAddChatMessage(modifiedText, bit.rshift(clr, 8))
-				message = modifiedText
 			end
 		end
 	end
-	if efir.auto.active and efir.auto.waitingForAnswer then
-		local smsText = message:match("SMS:%s*(.-)%s*Отправитель:")
-		local sender = message:match("Отправитель:%s*([%w_]+)")
-		local senderId = message:match("Отправитель:%s*[%w_]+%[(%d+)%]")
-		local phone = message:match("Тел%.:%s*(%d+)")
-		if smsText and sender and phone then
-			smsText = smsText:gsub("^%s+", ""):gsub("%s+$", "")
-			sender = sender:gsub("^%s+", ""):gsub("%s+$", "")
-			processAutoAnswer(smsText, sender, senderId)
+	if efir.auto.pausedDuringQuestions and originalMessage:match("SMS:") then
+		local smsText = originalMessage:match("SMS:%s*(.-)%s*Отправитель:")
+		local sender = originalMessage:match("Отправитель:%s*([%w_%.%[%]%-]+)")
+		if smsText and sender then
+			sender = sender:gsub("%[.-]%s*$", ""):gsub("^%s+", ""):gsub("%s+$", "")
+			local senderCopy = tostring(sender)
+			if senderCopy and #senderCopy > 0 then
+				if processAutoAnswer(smsText, senderCopy, senderCopy) then
+					local modifiedMsg = addIdToSMS(originalMessage)
+					modifiedMsg = modifiedMsg:gsub("{%x%x%x%x%x%x}", ""):gsub("{%x%x%x%x%x%x%x%x}", ""):gsub("{%x%x%x%x%x}", "")
+					sampAddChatMessage(u8:decode(escapeProblematicChars(modifiedMsg)), 0xFFFF00)
+					return false
+				end
+			end
 		end
-	elseif efir.mode[0] and efir.awaitingAnswer and efir.currentQuestion > 0 then
-		local smsText = message:match("SMS:%s*(.-)%s*Отправитель:")
-		local sender = message:match("Отправитель:%s*([%w_]+)")
-		local senderId = message:match("Отправитель:%s*[%w_]+%[(%d+)%]")
-		local phone = message:match("Тел%.:%s*(%d+)")
-		if smsText and sender and phone then
-			smsText = smsText:gsub("^%s+", ""):gsub("%s+$", "")
-			sender = sender:gsub("^%s+", ""):gsub("%s+$", "")
+	end
+	if efir.mode[0] and efir.awaitingAnswer and efir.currentQuestion > 0 then
+		local smsText = originalMessage:match("SMS:%s*(.-)%s*Отправитель:")
+		local sender = originalMessage:match("Отправитель:%s*([%w_%.%[%]%-]+)")
+		if smsText and sender then
+			sender = sender:gsub("%[.-]%s*$", ""):gsub("^%s+", ""):gsub("%s+$", "")
 			local currentType = _G.currentEfirType or 'math'
+			if not efir.answers[currentType] or not efir.answers[currentType][efir.currentQuestion] then
+				return true
+			end
 			local correctAnswer = ffi.string(efir.answers[currentType][efir.currentQuestion])
 			if checkSMSAnswer(smsText, correctAnswer) then
 				efir.awaitingAnswer = false
-				sampSendChat("Стоп!")
 				local translatedName = trst(sender:gsub("_", " "))
 				addball(sender:gsub("_", " "))
 				local points = efir.counter[sender:gsub("_", " ")]
@@ -5322,20 +7028,88 @@ function ev.onServerMessage(clr, message)
 						end
 					else
 						efir.currentQuestion = efir.currentQuestion + 1
-						if efir.currentQuestion <= 10 then
-							wait(2000)
-							sendNextQuestion()
-						else
-							endEfir()
+						if efir.currentQuestion > efirLineCount[currentType] then
+							efir.currentQuestion = 1
 						end
+						wait(2000)
+						sendNextQuestion()
 					end
 				end)
+				local modifiedMsg = addIdToSMS(originalMessage)
+				modifiedMsg = modifiedMsg:gsub("{%x%x%x%x%x%x}", ""):gsub("{%x%x%x%x%x%x%x%x}", ""):gsub("{%x%x%x%x%x}", "")
+				sampAddChatMessage(u8:decode(escapeProblematicChars(modifiedMsg)), 0x00FF00)
+				return false
 			end
 		end
 	end
+	if originalMessage:match("SMS:") and originalMessage:match("Отправитель:") then
+		local modifiedMsg = addIdToSMS(originalMessage)
+		modifiedMsg = modifiedMsg:gsub("{%x%x%x%x%x%x}", ""):gsub("{%x%x%x%x%x%x%x%x}", ""):gsub("{%x%x%x%x%x}", "")
+		sampAddChatMessage(u8:decode(escapeProblematicChars(modifiedMsg)), 0xFFFF00)
+		return false
+	end
+	return true
+end
+function addIdToSMS(message)
+	local beforeSMS = message:match("^(.-)SMS:")
+	local smsText = message:match("SMS:%s*(.-)%s*Отправитель:")
+	local sender = message:match("Отправитель:%s*(.-)%s*Тел")
+	local phone = message:match("Тел%.:%s*(%d+)")
+	if not smsText or not sender then
+		return message
+	end
+	sender = sender:gsub("^%s+", ""):gsub("%s+$", ""):gsub("%[.-]$", "")
+	local cleanNick = cleanNickname(sender)
+	local id = nil
+	local _, myId = sampGetPlayerIdByCharHandle(PLAYER_PED)
+	if myId then
+		local myNick = sampGetPlayerNickname(myId)
+		if myNick then
+			local cleanMyNick = cleanNickname(myNick)
+			if cleanMyNick == cleanNick then
+				id = myId
+			end
+		end
+	end
+	if not id then
+		for playerId = 0, sampGetMaxPlayerId() do
+			if sampIsPlayerConnected(playerId) then
+				local playerNick = sampGetPlayerNickname(playerId)
+				if playerNick then
+					local cleanPlayerNick = cleanNickname(playerNick)
+					if cleanPlayerNick == cleanNick then
+						id = playerId
+						break
+					end
+				end
+			end
+		end
+	end
+	beforeSMS = (beforeSMS or ""):gsub("{.-}", "")
+	smsText = (smsText or ""):gsub("{.-}", "")
+	local result = beforeSMS .. "SMS: " .. smsText .. " Отправитель: " .. cleanNick
+	if id then
+		result = result .. "[" .. tostring(id) .. "]"
+	end
+	result = result .. " Тел.: " .. (phone or "?")
+	result = result:gsub("{.-}", "")
+	return result
 end
 function ev.onInitGame(playerId)
-	chatIdMyId = playerId
+	chat.myId = playerId
+end
+function ev.onSendChat(message)
+	if not autoRP.enabled[0] then return end
+	if message:sub(1, 1) == "/" then return end
+	if message:sub(1, 1) == "!" then return end
+	if message:sub(1, 1) == "." then return end
+	if message:sub(1, 1) == "@" then return end
+	if message:match("^%s*$") then return end
+	local formatted = formatRPMessage(message)
+	if formatted ~= message then
+		sampSendChat(formatted)
+		return false
+	end
 end
 function doSendResponse()
 	if os.clock() < flags.blockSendUntil then
@@ -5364,29 +7138,29 @@ function saveToAdBuffer(editedText, force)
 		return
 	end
 	local bufferData = loadBufferFromFile()
-	local adText = normalizeText(settings.customAd.data.advertisement)
+	local currentAdNormalized = normalizeForBufferCompare(settings.customAd.data.advertisement)
 	local resText = normalizeText(editedText)
+	local found = false
 	for _, entry in ipairs(bufferData) do
-		if entry.advertisement == adText and 
+		local entryAdNormalized = normalizeForBufferCompare(entry.advertisement or "")
+		if entryAdNormalized == currentAdNormalized and 
 			entry.author == settings.customAd.data.author and
 			entry.phone == settings.customAd.data.phone then
 			entry.editedText = resText
-			saveBufferToFile(bufferData)
-			ui.search.needRestoreScroll = true
-			updateBufferCategory(bufferData)
-			ui.search.resultsValid = false
-			chatMessage(u8:decode('[News Helper] Обновлено существующее объявление в буфере'), 0xFFFF00)
-			return
+			found = true
+			break
 		end
 	end
-	local newEntry = {
-		advertisement = adText,
-		author = settings.customAd.data.author,
-		phone = settings.customAd.data.phone,
-		editedText = resText,
-		displayName = adText:sub(1, 30) .. (adText:len() > 30 and "..." or "")
-	}
-	table.insert(bufferData, 1, newEntry)
+	if not found then
+		local newEntry = {
+			advertisement = settings.customAd.data.advertisement,
+			author = settings.customAd.data.author,
+			phone = settings.customAd.data.phone,
+			editedText = resText,
+			displayName = settings.customAd.data.advertisement:sub(1, 30) .. (settings.customAd.data.advertisement:len() > 30 and "." or "")
+		}
+		table.insert(bufferData, 1, newEntry)
+	end
 	while #bufferData > settings.maxBufferSize do
 		table.remove(bufferData, #bufferData)
 	end
@@ -5466,6 +7240,1149 @@ function closeCustomAd(sendResponse, text)
 		windows.mainSettings[0] = true
 	end
 end
+function createNewBinder()
+	local newBind = {
+		name = "без названия",
+		hotkey = {},
+		command = "",
+		enableOnChat = false,
+		enableOnDialog = false,
+		requireConfirm = false,
+		blockKey = false,
+		mode = 1,
+		delay = 3000,
+		lines = {},
+		squareText = "",
+		confirmed = false
+	}
+	table.insert(binder.list, newBind)
+	saveBinder()
+	return #binder.list
+end
+function deleteBinder(index)
+	if binder.list[index] then
+		local cmd = binder.list[index].command
+		if cmd and cmd ~= "" then
+			sampUnregisterChatCommand(cmd)
+		end
+		table.remove(binder.list, index)
+		saveBinder()
+	end
+end
+function openBinderEdit(index)
+	if not binder.list[index] then return end
+	local bind = binder.list[index]
+	binder.editing = index
+	ffi.fill(binderEdit.name, 256)
+	ffi.copy(binderEdit.name, bind.name or "без названия")
+	binderEdit.hotkey = {}
+	for _, key in ipairs(bind.hotkey or {}) do
+		table.insert(binderEdit.hotkey, key)
+	end
+	ffi.fill(binderEdit.command, 64)
+	if bind.command then
+		ffi.copy(binderEdit.command, bind.command)
+	end
+	binderEdit.enableOnChat[0] = bind.enableOnChat or false
+	binderEdit.enableOnDialog[0] = bind.enableOnDialog or false
+	binderEdit.requireConfirm[0] = bind.requireConfirm or false
+	binderEdit.blockKey[0] = bind.blockKey or false
+	binderEdit.mode[0] = bind.mode or 1
+	binderEdit.delay[0] = bind.delay or 3000
+	binderEdit.lines = {}
+	if bind.lines then
+		for _, line in ipairs(bind.lines) do
+			table.insert(binderEdit.lines, {
+				text = imgui.new.char[512](line.text or ""),
+				delay = imgui.new.int(line.delay or bind.delay or 3000)
+			})
+		end
+	end
+	if #binderEdit.lines == 0 then
+		table.insert(binderEdit.lines, {
+			text = imgui.new.char[512](),
+			delay = imgui.new.int(bind.delay or 3000)
+		})
+	end
+	ffi.fill(binderEdit.squareText, 8192)
+	if bind.squareText then
+		ffi.copy(binderEdit.squareText, bind.squareText)
+	end
+	binder.editWindow[0] = true
+end
+function saveBinderEdit()
+	if not binder.editing or not binder.list[binder.editing] then return end
+	local bind = binder.list[binder.editing]
+	local oldCmd = bind.command
+	bind.name = ffi.string(binderEdit.name)
+	bind.hotkey = {}
+	for _, key in ipairs(binderEdit.hotkey) do
+		table.insert(bind.hotkey, key)
+	end
+	local newCmd = ffi.string(binderEdit.command)
+	bind.command = newCmd
+	bind.enableOnChat = binderEdit.enableOnChat[0]
+	bind.enableOnDialog = binderEdit.enableOnDialog[0]
+	bind.requireConfirm = binderEdit.requireConfirm[0]
+	bind.blockKey = binderEdit.blockKey[0]
+	bind.mode = binderEdit.mode[0]
+	bind.delay = binderEdit.delay[0]
+	if binderEdit.mode[0] == 1 then
+		bind.lines = {}
+		for _, line in ipairs(binderEdit.lines) do
+			table.insert(bind.lines, {
+				text = ffi.string(line.text),
+				delay = line.delay and line.delay[0] or bind.delay
+			})
+		end
+	else
+		local squareLines = {}
+		local text = ffi.string(binderEdit.squareText)
+		for line in text:gmatch("[^\r\n]+") do
+			local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+			if trimmed ~= "" then
+				table.insert(squareLines, {
+					text = trimmed,
+					delay = bind.delay
+				})
+			end
+		end
+		if #squareLines > 0 then
+			bind.lines = squareLines
+		end
+	end
+	bind.squareText = ffi.string(binderEdit.squareText)
+	if oldCmd ~= newCmd then
+		if oldCmd and oldCmd ~= "" then
+			sampUnregisterChatCommand(oldCmd)
+		end
+		if newCmd and newCmd ~= "" then
+			sampRegisterChatCommand(newCmd, function()
+				executeBinder(bind)
+			end)
+		end
+	end
+	saveBinder()
+	binder.editWindow[0] = false
+	binder.editing = nil
+	chatMessage(u8:decode('[News Helper] Бинд сохранен!'), 0x00FF00)
+end
+function executeBinder(bind)
+	if not bind then return end
+	if not bind.enableOnChat and sampIsChatInputActive() then return end
+	if not bind.enableOnDialog and sampIsDialogActive() then return end
+	if bind.requireConfirm then
+		if not bind.confirmed then
+			bind.confirmed = true
+			chatMessage(u8:decode('[News Helper] Нажмите еще раз для подтверждения'), 0xFFFF00)
+			lua_thread.create(function()
+				wait(3000)
+				bind.confirmed = false
+			end)
+			return
+		end
+		bind.confirmed = false
+	end
+	lua_thread.create(function()
+		if bind.lines and #bind.lines > 0 then
+			for _, line in ipairs(bind.lines) do
+				if line.text then
+					local text = type(line.text) == "string" and line.text or ffi.string(line.text)
+					if text ~= "" then
+						sampSendChat(u8:decode(text))
+						local delay = 3000
+						if line.delay then
+							delay = type(line.delay) == "number" and line.delay or line.delay[0]
+						elseif bind.delay then
+							delay = type(bind.delay) == "number" and bind.delay or bind.delay[0]
+						end
+						wait(delay)
+					end
+				end
+			end
+		end
+	end)
+end
+function getHotkeyDisplayText(keys)
+	if not keys or #keys == 0 then
+		return "Не назначено"
+	end
+	local parts = {}
+	for _, key in ipairs(keys) do
+		table.insert(parts, getKeyName(key))
+	end
+	return table.concat(parts, " + ")
+end
+function renderBinderTab()
+	imgui.Text('Менеджер биндов:')
+	imgui.Separator()
+	imgui.Spacing()
+	local windowWidth = imgui.GetWindowWidth() - 40
+	local buttonSize = 100
+	local spacing = 10
+	local buttonsPerRow = 6
+	local binderCount = #binder.list
+	imgui.BeginChild('##BinderList', imgui.ImVec2(0, -10), false)
+	binder.hoveredIndex = nil
+	local drawList = imgui.GetWindowDrawList()
+	for i, bind in ipairs(binder.list) do
+		local col = (i - 1) % buttonsPerRow
+		if col > 0 then imgui.SameLine(0, spacing) end
+		local cursorPos = imgui.GetCursorScreenPos()
+		local item = settings.colors.itemButtons
+		imgui.PushIDInt(i)
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+		if imgui.Button('##bindbtn', imgui.ImVec2(buttonSize, buttonSize)) then
+		end
+		local isHovered = imgui.IsItemHovered()
+		imgui.PopStyleColor(3)
+		local buttonText = bind.name or "без названия"
+		if #buttonText > 12 then
+			buttonText = buttonText:sub(1, 10) .. ".."
+		end
+		local textSize = imgui.CalcTextSize(buttonText)
+		local textX = cursorPos.x + (buttonSize - textSize.x) / 2
+		local textY = cursorPos.y + buttonSize + 3
+		drawList:AddText(imgui.ImVec2(textX, textY), imgui.GetColorU32Vec4(imgui.ImVec4(1, 1, 1, 1)), buttonText)
+		local statusText1 = ""
+		local statusText2 = ""
+		local statusColor = imgui.ImVec4(1, 1, 1, 1)
+		if bind.hotkey and #bind.hotkey > 0 then
+			statusText1 = getHotkeyDisplayText(bind.hotkey)
+			statusColor = imgui.ImVec4(1, 1, 1, 1)
+		elseif bind.command and bind.command ~= "" then
+			statusText1 = "Команда"
+			statusText2 = "/" .. bind.command
+			statusColor = imgui.ImVec4(1, 1, 1, 1)
+		else
+			statusText1 = "не назначено"
+			statusColor = imgui.ImVec4(0.7, 0.7, 0.7, 1)
+		end
+		if ui.fonts.binderStatus then imgui.PushFont(ui.fonts.binderStatus) end
+		if statusText1 ~= "" then
+			local statusSize1 = imgui.CalcTextSize(statusText1)
+			local maxWidth = buttonSize - 10
+			local statusX1 = cursorPos.x + (buttonSize - math.min(statusSize1.x, maxWidth)) / 2
+			local statusY1 = cursorPos.y + (buttonSize - statusSize1.y) / 2
+			if statusText2 ~= "" then
+				statusY1 = cursorPos.y + (buttonSize / 2) - statusSize1.y - 2
+			end
+			if statusSize1.x > maxWidth then
+				local words = {}
+				for word in statusText1:gmatch("%S+") do
+					table.insert(words, word)
+				end
+				local lines = {}
+				local currentLine = ""
+				for _, word in ipairs(words) do
+					local testLine = currentLine == "" and word or currentLine .. " " .. word
+					local testSize = imgui.CalcTextSize(testLine)
+					if testSize.x > maxWidth and currentLine ~= "" then
+						table.insert(lines, currentLine)
+						currentLine = word
+					else
+						currentLine = testLine
+					end
+				end
+				if currentLine ~= "" then
+					table.insert(lines, currentLine)
+				end
+				
+				for idx, line in ipairs(lines) do
+					local lineSize = imgui.CalcTextSize(line)
+					local lineX = cursorPos.x + (buttonSize - lineSize.x) / 2
+					local lineY = statusY1 + (idx - 1) * 15
+					drawList:AddText(imgui.ImVec2(lineX, lineY), imgui.GetColorU32Vec4(statusColor), line)
+				end
+			else
+				drawList:AddText(imgui.ImVec2(statusX1, statusY1), imgui.GetColorU32Vec4(statusColor), statusText1)
+			end
+		end
+		if statusText2 ~= "" then
+			local statusSize2 = imgui.CalcTextSize(statusText2)
+			local maxWidth = buttonSize - 10
+			local statusX2 = cursorPos.x + (buttonSize - math.min(statusSize2.x, maxWidth)) / 2
+			local statusY2 = cursorPos.y + (buttonSize / 2) + 2
+			if statusSize2.x > maxWidth then
+				local words = {}
+				for word in statusText2:gmatch("%S+") do
+					table.insert(words, word)
+				end
+				local lines = {}
+				local currentLine = ""
+				for _, word in ipairs(words) do
+					local testLine = currentLine == "" and word or currentLine .. " " .. word
+					local testSize = imgui.CalcTextSize(testLine)
+					if testSize.x > maxWidth and currentLine ~= "" then
+						table.insert(lines, currentLine)
+						currentLine = word
+					else
+						currentLine = testLine
+					end
+				end
+				if currentLine ~= "" then
+					table.insert(lines, currentLine)
+				end
+				for idx, line in ipairs(lines) do
+					local lineSize = imgui.CalcTextSize(line)
+					local lineX = cursorPos.x + (buttonSize - lineSize.x) / 2
+					local lineY = statusY2 + (idx - 1) * 15
+					drawList:AddText(imgui.ImVec2(lineX, lineY), imgui.GetColorU32Vec4(statusColor), line)
+				end
+			else
+				drawList:AddText(imgui.ImVec2(statusX2, statusY2), imgui.GetColorU32Vec4(statusColor), statusText2)
+			end
+		end
+		if ui.fonts.binderStatus then imgui.PopFont() end
+		if isHovered then
+			binder.hoveredIndex = i
+			local btnMin = imgui.ImVec2(cursorPos.x, cursorPos.y)
+			local btnMax = imgui.ImVec2(cursorPos.x + buttonSize, cursorPos.y + buttonSize)
+			drawList:AddRectFilled(btnMin, btnMax, imgui.GetColorU32Vec4(imgui.ImVec4(0, 0, 0, 0.6)))
+			local delBtnSize = 30
+			local delBtnX = cursorPos.x + buttonSize - delBtnSize - 5
+			local delBtnY = cursorPos.y + 5
+			local isConfirming = binder.deleteConfirm == i
+			local delColor = isConfirming and imgui.ImVec4(1, 0.3, 0.3, 0.9) or imgui.ImVec4(0.8, 0.2, 0.2, 0.8)
+			drawList:AddRectFilled(imgui.ImVec2(delBtnX, delBtnY), imgui.ImVec2(delBtnX + delBtnSize, delBtnY + delBtnSize), imgui.GetColorU32Vec4(delColor), 4)
+			if fa_font then imgui.PushFont(fa_font) end
+			local trashIcon = fa('trash')
+			local trashSize = imgui.CalcTextSize(trashIcon)
+			local trashX = delBtnX + (delBtnSize - trashSize.x) / 2
+			local trashY = delBtnY + (delBtnSize - trashSize.y) / 2
+			drawList:AddText(imgui.ImVec2(trashX, trashY), imgui.GetColorU32Vec4(imgui.ImVec4(1, 1, 1, 1)), trashIcon)
+			if fa_font then imgui.PopFont() end
+			local mousePos = imgui.GetMousePos()
+			local isOnDelete = mousePos.x >= delBtnX and mousePos.x <= delBtnX + delBtnSize and mousePos.y >= delBtnY and mousePos.y <= delBtnY + delBtnSize
+			if imgui.IsMouseClicked(0) then
+				if isOnDelete then
+					if isConfirming then
+						deleteBinder(i)
+						binder.deleteConfirm = nil
+					else
+						binder.deleteConfirm = i
+					end
+				else
+					openBinderEdit(i)
+				end
+			end
+			if isOnDelete and isConfirming then
+				imgui.SetTooltip('Нажмите еще раз для подтверждения')
+			elseif not isOnDelete then
+				imgui.SetTooltip('Нажмите чтобы редактировать')
+			end
+		end
+		imgui.PopID()
+		if (i % buttonsPerRow == 0) and (i ~= binderCount) then
+			imgui.Dummy(imgui.ImVec2(0, 25))
+		end
+	end
+	if binder.hoveredIndex == nil and binder.deleteConfirm then
+		binder.deleteConfirm = nil
+	end
+	local addCol = binderCount % buttonsPerRow
+	if addCol > 0 then
+		imgui.SameLine(0, spacing)
+	else
+		imgui.Dummy(imgui.ImVec2(0, 25))
+	end
+	local addCursorPos = imgui.GetCursorScreenPos()
+	local item = settings.colors.itemButtons
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0]*0.7, item[1]*0.7, item[2]*0.7, 0.5))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0], item[1], item[2], 0.8))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+	if fa_font then imgui.PushFont(fa_font) end
+	if imgui.Button(fa('plus') .. '##addnew', imgui.ImVec2(buttonSize, buttonSize)) then
+		createNewBinder()
+	end
+	if fa_font then imgui.PopFont() end
+	imgui.PopStyleColor(3)
+	local addTextSize = imgui.CalcTextSize('Новый бинд')
+	local addTextX = addCursorPos.x + (buttonSize - addTextSize.x) / 2
+	local addTextY = addCursorPos.y + buttonSize + 3
+	drawList:AddText(imgui.ImVec2(addTextX, addTextY), imgui.GetColorU32Vec4(imgui.ImVec4(1, 1, 1, 1)), 'Новый бинд')
+	imgui.EndChild()
+end
+function renderBinderEditPopup()
+	if not binder.editWindow[0] then return end
+	local sizeX, sizeY = getScreenResolution()
+	imgui.SetNextWindowPos(imgui.ImVec2(sizeX / 2, sizeY / 2), imgui.Cond.Always, imgui.ImVec2(0.5, 0.5))
+	imgui.SetNextWindowSize(imgui.ImVec2(700, 600), imgui.Cond.Always)
+	local bg = settings.colors.background
+	local item = settings.colors.itemButtons
+	imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(bg[0], bg[1], bg[2], 0.98))
+	imgui.PushStyleColor(imgui.Col.TitleBg, imgui.ImVec4(item[0], item[1], item[2], 1))
+	imgui.PushStyleColor(imgui.Col.TitleBgActive, imgui.ImVec4(item[0]*1.1, item[1]*1.1, item[2]*1.1, 1))
+	local windowFlags = imgui.WindowFlags.NoResize + imgui.WindowFlags.NoMove + imgui.WindowFlags.NoCollapse
+	if imgui.Begin('Редактор бинда##bindedit', binder.editWindow, windowFlags) then
+		local inputBg = imgui.ImVec4(bg[0]*0.5, bg[1]*0.5, bg[2]*0.5, 1)
+		local inputBgHover = imgui.ImVec4(bg[0]*0.7, bg[1]*0.7, bg[2]*0.7, 1)
+		local inputBgActive = imgui.ImVec4(bg[0]*0.9, bg[1]*0.9, bg[2]*0.9, 1)
+		imgui.PushItemWidth(420)
+		imgui.PushStyleColor(imgui.Col.FrameBg, inputBg)
+		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgHover)
+		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgActive)
+		imgui.InputTextWithHint('##bindname', 'Название бинда', binderEdit.name, 256)
+		imgui.PopStyleColor(3)
+		imgui.PopItemWidth()
+		imgui.SameLine()
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+		if fa_font then imgui.PushFont(fa_font) end
+		if imgui.Button(fa('sliders') .. '##conditions', imgui.ImVec2(35, 0)) then
+			binder.conditionsWindow[0] = not binder.conditionsWindow[0]
+		end
+		if fa_font then imgui.PopFont() end
+		imgui.PopStyleColor(3)
+		imgui.SameLine()
+		local viewModeIcon = binderEdit.mode[0] == 1 and fa('bars') or fa('square')
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+		if fa_font then imgui.PushFont(fa_font) end
+		if imgui.Button(viewModeIcon .. '##viewmode', imgui.ImVec2(35, 0)) then
+			if binderEdit.mode[0] == 1 then
+				local squareLines = {}
+				for _, line in ipairs(binderEdit.lines) do
+					if line.text then
+						local text = ffi.string(line.text)
+						if text ~= "" then
+							table.insert(squareLines, text)
+						end
+					end
+				end
+				local combinedText = table.concat(squareLines, "\n")
+				ffi.fill(binderEdit.squareText, ffi.sizeof(binderEdit.squareText))
+				ffi.copy(binderEdit.squareText, combinedText)
+				binderEdit.mode[0] = 2
+			else
+				binderEdit.lines = {}
+				local text = ffi.string(binderEdit.squareText)
+				for line in text:gmatch("[^\r\n]+") do
+					local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+					if trimmed ~= "" then
+						table.insert(binderEdit.lines, {
+							text = imgui.new.char[512](trimmed),
+							delay = imgui.new.int(binderEdit.delay[0])
+						})
+					end
+				end
+				if #binderEdit.lines == 0 then
+					table.insert(binderEdit.lines, {
+						text = imgui.new.char[512](),
+						delay = imgui.new.int(binderEdit.delay[0])
+					})
+				end
+				binderEdit.mode[0] = 1
+			end
+		end
+		if fa_font then imgui.PopFont() end
+		imgui.PopStyleColor(3)
+		imgui.Spacing()
+		imgui.Text('Горячая клавиша:')
+		imgui.SameLine()
+		local hotkeyText = binder.keyCapture.active and 'Нажмите клавиши...' or getHotkeyDisplayText(binderEdit.hotkey)
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+		if imgui.Button(hotkeyText .. '##hotkey', imgui.ImVec2(200, 25)) then
+			local cmdText = ffi.string(binderEdit.command)
+			if cmdText ~= "" then
+				ffi.fill(binderEdit.command, 64)
+			end
+			binder.keyCapture.active = true
+			binder.keyCapture.keys = {}
+			binderEdit.tempHotkey = {}
+		end
+		imgui.PopStyleColor(3)
+		if binder.keyCapture.active then
+			imgui.SameLine()
+			imgui.TextColored(imgui.ImVec4(1, 1, 0, 1), 'Отпустите все клавиши для сохранения')
+		end
+		imgui.SameLine()
+		if #binderEdit.hotkey > 0 then
+			imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.2, 1))
+			imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.3, 1))
+			imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.1, 0.1, 1))
+			if imgui.Button('X##clearhotkey', imgui.ImVec2(25, 25)) then
+				binderEdit.hotkey = {}
+			end
+			imgui.PopStyleColor(3)
+			if imgui.IsItemHovered() then
+				imgui.SetTooltip('Удалить клавишу')
+			end
+			imgui.SameLine()
+		end
+		imgui.Text('Команда:')
+		imgui.SameLine()
+		imgui.PushItemWidth(150)
+		imgui.PushStyleColor(imgui.Col.FrameBg, inputBg)
+		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgHover)
+		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgActive)
+		if imgui.InputTextWithHint('##command', 'без /', binderEdit.command, 64) then
+			if #binderEdit.hotkey > 0 then
+				binderEdit.hotkey = {}
+			end
+		end
+		imgui.PopStyleColor(3)
+		imgui.PopItemWidth()
+		imgui.Spacing()
+		imgui.Separator()
+		imgui.Spacing()
+		imgui.Text('Задержка (мс):')
+		imgui.SameLine()
+		imgui.PushItemWidth(100)
+		imgui.PushStyleColor(imgui.Col.FrameBg, inputBg)
+		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgHover)
+		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgActive)
+		if imgui.InputInt('##delay', binderEdit.delay, 0, 0) then
+			if binderEdit.delay[0] < 0 then binderEdit.delay[0] = 0 end
+			if binderEdit.delay[0] > 100000 then binderEdit.delay[0] = 100000 end
+		end
+		imgui.PopStyleColor(3)
+		imgui.PopItemWidth()
+		imgui.SameLine()
+		setupCheckboxStyle()
+		if imgui.Checkbox('Блокировать клавишу', binderEdit.blockKey) then end
+		if imgui.IsItemHovered() then
+			imgui.SetTooltip('Если включено - при нажатии эта клавиша\nне будет работать в игре и других скриптах.')
+		end
+		cleanupCheckboxStyle()
+		imgui.SameLine()
+		setupCheckboxStyle()
+		if imgui.Checkbox('Подтверждение активации', binderEdit.requireConfirm) then end
+		if imgui.IsItemHovered() then
+			imgui.SetTooltip('Если включено - для срабатывания биндера\nнужно нажать клавишу дважды подряд.')
+		end
+		cleanupCheckboxStyle()
+		imgui.Spacing()
+		if binderEdit.mode[0] == 1 then
+			renderBinderLinesMode(inputBg, inputBgHover, inputBgActive, item)
+		else
+			renderBinderSquareMode(inputBg, inputBgHover, inputBgActive)
+		end
+		imgui.SetCursorPosY(imgui.GetWindowHeight() - 45)
+		imgui.Separator()
+		local btnWidth = (imgui.GetWindowWidth() - 30) / 2
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+		if fa_font then imgui.PushFont(fa_font) end
+		if imgui.Button(fa('xmark') .. ' Отменить', imgui.ImVec2(btnWidth, 30)) then
+			binder.editWindow[0] = false
+			binder.editing = nil
+		end
+		if fa_font then imgui.PopFont() end
+		imgui.PopStyleColor(3)
+		imgui.SameLine()
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.7, 0.3, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.8, 0.4, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.15, 0.6, 0.25, 1))
+		if fa_font then imgui.PushFont(fa_font) end
+		if imgui.Button(fa('floppy_disk') .. ' Сохранить', imgui.ImVec2(btnWidth, 30)) then
+			saveBinderEdit()
+		end
+		if fa_font then imgui.PopFont() end
+		imgui.PopStyleColor(3)
+		imgui.End()
+	end
+	imgui.PopStyleColor(3)
+	if binder.conditionsWindow[0] then
+		renderConditionsPopup(item, inputBg, inputBgHover, inputBgActive)
+	end
+end
+function renderConditionsPopup(item, inputBg, inputBgHover, inputBgActive)
+	local sizeX, sizeY = getScreenResolution()
+	imgui.SetNextWindowPos(imgui.ImVec2(sizeX/2 + 400, sizeY/2), imgui.Cond.Always, imgui.ImVec2(0.5, 0.5))
+	imgui.SetNextWindowSize(imgui.ImVec2(300, 150), imgui.Cond.Always)
+	local bg = settings.colors.background
+	imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(bg[0], bg[1], bg[2], 0.98))
+	imgui.PushStyleColor(imgui.Col.TitleBg, imgui.ImVec4(item[0], item[1], item[2], 1))
+	imgui.PushStyleColor(imgui.Col.TitleBgActive, imgui.ImVec4(item[0]*1.1, item[1]*1.1, item[2]*1.1, 1))
+	if imgui.Begin('Условия активации##conditions', binder.conditionsWindow, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoCollapse) then
+		imgui.Text('Условия запуска:')
+		imgui.Separator()
+		imgui.Spacing()
+		setupCheckboxStyle()
+		if imgui.Checkbox('Запускать при активном чате', binderEdit.enableOnChat) then end
+		imgui.Spacing()
+		if imgui.Checkbox('Запускать при активном диалоге', binderEdit.enableOnDialog) then end
+		cleanupCheckboxStyle()
+		imgui.End()
+	end
+	imgui.PopStyleColor(3)
+end
+function renderBinderLinesMode(inputBg, inputBgHover, inputBgActive, item)
+	local contentHeight = imgui.GetWindowHeight() - 280
+	imgui.BeginChild('##BinderLines', imgui.ImVec2(0, contentHeight), true)
+	if not binderEdit.lines or #binderEdit.lines == 0 then
+		binderEdit.lines = {{text = imgui.new.char[512](), delay = imgui.new.int(binderEdit.delay[0])}}
+	end
+	local toDelete = nil
+	local lineHeight = 30
+	local lineSpacing = 5
+	local mousePos = imgui.GetMousePos()
+	local childPos = imgui.GetWindowPos()
+	local scrollY = imgui.GetScrollY()
+	local n = #binderEdit.lines
+	local targetInsertIndex = nil
+	if flags.draggingLineIndex and flags.draggingLineIndex > 0 and flags.draggingLineIndex <= n then
+		local relativeMouseY = mousePos.y - childPos.y + scrollY
+		targetInsertIndex = 1
+		local accumulatedHeight = 0
+		for i = 1, n do
+			local currentLineCenter = accumulatedHeight + (lineHeight / 2)
+			if relativeMouseY > currentLineCenter then
+				targetInsertIndex = i + 1
+			end
+			accumulatedHeight = accumulatedHeight + lineHeight + lineSpacing
+		end
+		targetInsertIndex = math.max(1, math.min(targetInsertIndex, n + 1))
+	end
+	for i = 1, n do
+		local line = binderEdit.lines[i]
+		if not line then
+			binderEdit.lines[i] = { text = imgui.new.char[512](), delay = imgui.new.int(binderEdit.delay[0]) }
+			line = binderEdit.lines[i]
+		end
+		local skipLine = (flags.draggingLineIndex == i)
+		if flags.draggingLineIndex and targetInsertIndex == i and targetInsertIndex ~= flags.draggingLineIndex then
+			imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.3, 0.8, 0.3, 0.3))
+			imgui.Button('← Вставить сюда →##dropzone' .. i, imgui.ImVec2(-1, 20))
+			imgui.PopStyleColor()
+			imgui.Spacing()
+		end
+		if not skipLine then
+			imgui.PushIDInt(i)
+			imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+			imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+			imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+			local dragText = '↕'
+			if fa_font then
+				imgui.PushFont(fa_font)
+				dragText = fa.ICON_FA_ARROWS_ALT_V or '↕'
+			end
+			if imgui.Button(dragText .. '##drag' .. i, imgui.ImVec2(25, 20)) then
+			end
+			if fa_font then imgui.PopFont() end
+			if imgui.IsItemActive() and imgui.IsMouseDragging(0) then
+				if not flags.draggingLineIndex then
+					flags.draggingLineIndex = i
+					local lineY = childPos.y - scrollY
+					local accHeight = 0
+					for j = 1, i - 1 do
+						accHeight = accHeight + lineHeight + lineSpacing
+					end
+					lineY = lineY + accHeight
+					dragOffsetY = mousePos.y - lineY
+					dragOffsetY = math.max(0, math.min(dragOffsetY, lineHeight))
+				end
+			end
+			imgui.PopStyleColor(3)
+			imgui.SameLine()
+			imgui.PushItemWidth(-145)
+			imgui.PushStyleColor(imgui.Col.FrameBg, inputBg)
+			imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgHover)
+			imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgActive)
+			if flags.focusLineIndex == i then
+				imgui.SetKeyboardFocusHere()
+				flags.focusLineIndex = nil
+			end
+			local enterPressed = imgui.InputText('##text' .. i, line.text, ffi.sizeof(line.text), imgui.InputTextFlags.EnterReturnsTrue)
+			imgui.PopStyleColor(3)
+			imgui.PopItemWidth()
+			if enterPressed then
+				table.insert(binderEdit.lines, i + 1, { text = imgui.new.char[512](), delay = imgui.new.int(binderEdit.delay[0]) })
+				flags.focusLineIndex = i + 1
+				flags.needScrollToBottom = true
+			end
+			imgui.SameLine()
+			imgui.PushItemWidth(80)
+			imgui.PushStyleColor(imgui.Col.FrameBg, inputBg)
+			imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgHover)
+			imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgActive)
+			if not line.delay then
+				line.delay = imgui.new.int(binderEdit.delay[0])
+			end
+			if imgui.InputInt('##delay' .. i, line.delay, 0, 0) then
+				if line.delay[0] < 100 then line.delay[0] = 100 end
+				if line.delay[0] > 10000 then line.delay[0] = 10000 end
+			end
+			imgui.PopStyleColor(3)
+			imgui.PopItemWidth()
+			imgui.SameLine()
+			imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.2, 1))
+			imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.3, 1))
+			imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.1, 0.1, 1))
+			if imgui.Button('X##del' .. i, imgui.ImVec2(25, 20)) then
+				if n > 1 then toDelete = i end
+			end
+			imgui.PopStyleColor(3)
+			imgui.PopID()
+		else
+			imgui.Dummy(imgui.ImVec2(0, lineHeight))
+		end
+		imgui.Spacing()
+	end
+	if flags.draggingLineIndex and targetInsertIndex == n + 1 then
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.3, 0.8, 0.3, 0.3))
+		imgui.Button('← Вставить в конец →##dropzoneend', imgui.ImVec2(-1, 20))
+		imgui.PopStyleColor()
+	end
+	if flags.draggingLineIndex then
+		local windowHeight = imgui.GetWindowHeight()
+		local relativeMouseY = mousePos.y - childPos.y
+		local scrollZone = 40
+		local scrollSpeed = 5
+		local scrollMultiplier = 1
+		if relativeMouseY < scrollZone and imgui.GetScrollY() > 0 then
+			scrollMultiplier = 1 - (relativeMouseY / scrollZone)
+			local currentScroll = imgui.GetScrollY()
+			local newScroll = math.max(0, currentScroll - (scrollSpeed * (1 + scrollMultiplier * 2)))
+			imgui.SetScrollY(newScroll)
+		end
+		if relativeMouseY > windowHeight - scrollZone and imgui.GetScrollY() < imgui.GetScrollMaxY() then
+			scrollMultiplier = (relativeMouseY - (windowHeight - scrollZone)) / scrollZone
+			local currentScroll = imgui.GetScrollY()
+			local maxScroll = imgui.GetScrollMaxY()
+			local newScroll = math.min(maxScroll, currentScroll + (scrollSpeed * (1 + scrollMultiplier * 2)))
+			imgui.SetScrollY(newScroll)
+		end
+	end
+	if flags.draggingLineIndex and binderEdit.lines[flags.draggingLineIndex] then
+		local drawList = imgui.GetWindowDrawList()
+		local line = binderEdit.lines[flags.draggingLineIndex]
+		local dragPosX = childPos.x + 10
+		local dragPosY = mousePos.y - (dragOffsetY or (lineHeight / 2))
+		local getColorU32 = imgui.GetColorU32Vec4 or imgui.ColorConvertFloat4ToU32
+		if getColorU32 then
+			drawList:AddRectFilled(
+				imgui.ImVec2(dragPosX, dragPosY),
+				imgui.ImVec2(dragPosX + imgui.GetWindowWidth() - 30, dragPosY + lineHeight),
+				getColorU32(imgui.ImVec4(inputBg.x, inputBg.y, inputBg.z, 0.97)),
+				5
+			)
+			local text = ""
+			if line and line.text then
+				local success, result = pcall(ffi.string, line.text)
+				if success then
+					text = result
+				end
+			end
+			if text == "" then text = "[Пустая строка]" end
+			if #text > 50 then text = text:sub(1, 47) .. "..." end
+			drawList:AddText(
+				imgui.ImVec2(dragPosX + 30, dragPosY + 5),
+				getColorU32(imgui.ImVec4(1, 1, 1, 1)),
+				text
+			)
+		end
+	end
+	if flags.draggingLineIndex and not imgui.IsMouseDown(0) then
+		if targetInsertIndex and targetInsertIndex ~= flags.draggingLineIndex and
+			flags.draggingLineIndex > 0 and flags.draggingLineIndex <= n then
+			local movingLine = table.remove(binderEdit.lines, flags.draggingLineIndex)
+			if movingLine then
+				local insertPos = targetInsertIndex
+				if insertPos > flags.draggingLineIndex then
+					insertPos = insertPos - 1
+				end
+				insertPos = math.max(1, math.min(insertPos, #binderEdit.lines + 1))
+				table.insert(binderEdit.lines, insertPos, movingLine)
+			end
+		end
+		flags.draggingLineIndex = nil
+		dragOffsetY = nil
+	end
+	if not flags.draggingLineIndex then
+		imgui.Dummy(imgui.ImVec2(25, 20))
+		imgui.SameLine()
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(inputBg.x, inputBg.y, inputBg.z, 0.5))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(inputBgHover.x, inputBgHover.y, inputBgHover.z, 0.7))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, inputBgActive)
+		imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(1, 1, 1, 0.5))
+		local buttonWidth = imgui.GetContentRegionAvail().x - 30
+		local buttonText = 'Нажмите Enter ' .. (fa_font and fa('arrow_turn_down_left') or '↵') .. ' или кликните мышью чтобы добавить строку.##addnewline'
+		if imgui.Button(buttonText, imgui.ImVec2(buttonWidth, 20)) then
+			table.insert(binderEdit.lines, { text = imgui.new.char[512](), delay = imgui.new.int(binderEdit.delay[0]) })
+			flags.focusLineIndex = #binderEdit.lines
+			flags.needScrollToBottom = true
+		end
+		imgui.PopStyleColor(4)
+		imgui.SameLine()
+		imgui.Dummy(imgui.ImVec2(25, 20))
+	end
+	if toDelete and toDelete > 0 and toDelete <= #binderEdit.lines then
+		table.remove(binderEdit.lines, toDelete)
+	end
+	if flags.needScrollToBottom then
+		imgui.SetScrollHereY(1.0)
+		flags.needScrollToBottom = false
+	end
+	imgui.EndChild()
+end
+function renderBinderSquareMode(inputBg, inputBgHover, inputBgActive)
+	local contentHeight = imgui.GetWindowHeight() - 280
+	imgui.BeginChild('##BinderSquare', imgui.ImVec2(0, contentHeight), true)
+	imgui.PushStyleColor(imgui.Col.FrameBg, inputBg)
+	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgHover)
+	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgActive)
+	imgui.InputTextMultiline('##squaretext', binderEdit.squareText, 8192, imgui.ImVec2(-1, -1))
+	imgui.PopStyleColor(3)
+	imgui.EndChild()
+end
+function checkBinderHotkeys()
+	for i, bind in ipairs(binder.list) do
+		if bind.hotkey and #bind.hotkey > 0 then
+			local allPressed = true
+			for _, key in ipairs(bind.hotkey) do
+				if not isKeyPressed(key) then
+					allPressed = false
+					break
+				end
+			end
+			if allPressed then
+				if isAnyOtherKeyPressed(bind.hotkey) then
+					if not bind.otherKeyWarningShown then
+						bind.otherKeyWarningShown = true
+					end
+					goto continue
+				end
+				bind.otherKeyWarningShown = false
+				if not bind.hotkeyPressed then
+					bind.hotkeyPressed = true
+					local shouldExecute = true
+					if not bind.enableOnChat and sampIsChatInputActive() then
+						shouldExecute = false
+					end
+					if not bind.enableOnDialog and sampIsDialogActive() then
+						shouldExecute = false
+					end
+					if shouldExecute then
+						if bind.blockKey then
+							for _, key in ipairs(bind.hotkey) do
+								consumeWindowMessage(true, true)
+							end
+						end
+						executeBinder(bind)
+					end
+				end
+			else
+				bind.hotkeyPressed = false
+				bind.otherKeyWarningShown = false
+			end
+			::continue::
+		end
+	end
+end
+function executeRSAction(actionKey,targetId)
+	local action=rsSettings.actions[actionKey]
+	if not action then return end
+	if action.needInput then
+		playerInteraction.inputType=actionKey
+		playerInteraction.targetId=targetId
+		playerInteraction.inputTitle=action.inputPlaceholder or "Введите данные"
+		ffi.fill(playerInteraction.inputText,256)
+		windows.rsInput[0]=true
+		windows.playerMenu[0]=false
+	else
+		lua_thread.create(function()
+			for _,line in ipairs(action.lines) do
+				sampSendChat(u8:decode(line))
+				wait(action.delay)
+			end
+			if actionKey=="invite" then
+				sampSendChat(string.format("/invite %d",targetId))
+			elseif actionKey=="givedress" then
+				sampSendChat(string.format("/givedress %d",targetId))
+			elseif actionKey=="unvig" then
+				sampSendChat(string.format("/unvig %d",targetId))
+			end
+		end)
+		windows.playerMenu[0]=false
+	end
+end
+function executeRSActionWithInput(actionKey,targetId,inputText)
+	local action=rsSettings.actions[actionKey]
+	if not action then return end
+	lua_thread.create(function()
+		for _,line in ipairs(action.lines) do
+			sampSendChat(u8:decode(line))
+			wait(action.delay)
+		end
+		if actionKey=="uninvite" then
+			sampSendChat(string.format("/uninvite %d %s",targetId,inputText))
+		elseif actionKey=="rank" then
+			sampSendChat(string.format("/rank %d %s",targetId,inputText))
+		elseif actionKey=="vig" then
+			sampSendChat(string.format("/vig %d %s",targetId,inputText))
+		end
+	end)
+end
+function openRSEditor(actionKey)
+	rsSettings.currentAction=actionKey
+	local action=rsSettings.actions[actionKey]
+	if not action then return end
+	rsEditor.lines={}
+	for _,line in ipairs(action.lines) do
+		table.insert(rsEditor.lines,{
+			text=imgui.new.char[512](line)
+		})
+	end
+	ffi.fill(rsEditor.newLineText,512)
+	windows.rsEditor[0]=true
+	windows.rsWindow[0]=false
+end
+function saveRSEditorChanges()
+	if not rsSettings.currentAction then return end
+	local action=rsSettings.actions[rsSettings.currentAction]
+	if not action then return end
+	action.lines={}
+	for _,line in ipairs(rsEditor.lines) do
+		local text=ffi.string(line.text)
+		if text~="" then
+			table.insert(action.lines,text)
+		end
+	end
+	saveRSSettings()
+	chatMessage(u8:decode('[News Helper] Отыгровки сохранены!'),0x00FF00)
+	windows.rsEditor[0]=false
+	windows.rsWindow[0]=true
+end
+imgui.OnFrame(function() return windows.rsWindow[0] end,function()
+	local sizeX,sizeY=getScreenResolution()
+	imgui.SetNextWindowPos(imgui.ImVec2(sizeX/2,sizeY/2),imgui.Cond.FirstUseEver,imgui.ImVec2(0.5,0.5))
+	imgui.SetNextWindowSize(imgui.ImVec2(700,500),imgui.Cond.FirstUseEver)
+	local bg=settings.colors.background
+	local item=settings.colors.itemButtons
+	imgui.PushStyleColor(imgui.Col.WindowBg,imgui.ImVec4(bg[0],bg[1],bg[2],0.98))
+	imgui.PushStyleColor(imgui.Col.TitleBg,imgui.ImVec4(item[0],item[1],item[2],1))
+	imgui.PushStyleColor(imgui.Col.TitleBgActive,imgui.ImVec4(item[0]*1.1,item[1]*1.1,item[2]*1.1,1))
+	if imgui.Begin('Панель заместителя##rsWindow',windows.rsWindow,imgui.WindowFlags.NoCollapse) then
+		imgui.Text('Настройки отыгровок для команд')
+		imgui.Separator()
+		imgui.Spacing()
+		imgui.Text('Клавиша взаимодействия:')
+		imgui.SameLine()
+		local keyName=getKeyName(rsSettings.interactionKey)
+		imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(item[0],item[1],item[2],1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(item[0]*1.2,item[1]*1.2,item[2]*1.2,1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(item[0]*1.4,item[1]*1.4,item[2]*1.4,1))
+		if rsSettings.isSettingKey then
+			imgui.Button('Нажмите клавишу...##rskey',imgui.ImVec2(150,25))
+		else
+			if imgui.Button(keyName..'##rskey',imgui.ImVec2(150,25)) then
+				rsSettings.isSettingKey=true
+			end
+		end
+		imgui.PopStyleColor(3)
+		if imgui.IsItemHovered() then
+			imgui.SetTooltip('ПКМ + эта клавиша при наведении на игрока')
+		end
+		imgui.Spacing()
+		imgui.Separator()
+		imgui.Spacing()
+		imgui.TextColored(imgui.ImVec4(1,1,0,1),'Примечание: команды НЕ нужно добавлять в отыгровки!')
+		imgui.TextWrapped('Команда выполнится автоматически после всех /me')
+		imgui.Spacing()
+		imgui.Separator()
+		imgui.Spacing()
+		imgui.BeginChild('##rsActions',imgui.ImVec2(0,0),true)
+		for actionKey,action in pairs(rsSettings.actions) do
+			imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(item[0],item[1],item[2],1))
+			imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(item[0]*1.2,item[1]*1.2,item[2]*1.2,1))
+			imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(item[0]*1.4,item[1]*1.4,item[2]*1.4,1))
+			if imgui.Button(action.name..'##'..actionKey,imgui.ImVec2(-1,30)) then
+				openRSEditor(actionKey)
+			end
+			imgui.PopStyleColor(3)
+			imgui.Spacing()
+		end
+		imgui.EndChild()
+		imgui.End()
+	end
+	imgui.PopStyleColor(3)
+end).Priority=settings.renderPriority+40
+imgui.OnFrame(function() return windows.rsEditor[0] end,function()
+	local sizeX,sizeY=getScreenResolution()
+	imgui.SetNextWindowPos(imgui.ImVec2(sizeX/2,sizeY/2),imgui.Cond.Always,imgui.ImVec2(0.5,0.5))
+	imgui.SetNextWindowSize(imgui.ImVec2(600,400),imgui.Cond.Always)
+	local bg=settings.colors.background
+	local item=settings.colors.itemButtons
+	imgui.PushStyleColor(imgui.Col.WindowBg,imgui.ImVec4(bg[0],bg[1],bg[2],0.98))
+	imgui.PushStyleColor(imgui.Col.TitleBg,imgui.ImVec4(item[0],item[1],item[2],1))
+	imgui.PushStyleColor(imgui.Col.TitleBgActive,imgui.ImVec4(item[0]*1.1,item[1]*1.1,item[2]*1.1,1))
+	if imgui.Begin('Редактор отыгровок##rsEditor',windows.rsEditor,imgui.WindowFlags.NoResize+imgui.WindowFlags.NoCollapse) then
+		if rsSettings.currentAction then
+			local action=rsSettings.actions[rsSettings.currentAction]
+			if action then
+				imgui.Text('Редактирование: '..action.name)
+				imgui.Separator()
+				imgui.Spacing()
+				imgui.BeginChild('##rsEditorLines',imgui.ImVec2(0,-50),true)
+				local toDelete=nil
+				for i,line in ipairs(rsEditor.lines) do
+					imgui.PushIDInt(i)
+					imgui.PushItemWidth(-40)
+					local inputBg=imgui.ImVec4(bg[0]*0.5,bg[1]*0.5,bg[2]*0.5,1)
+					imgui.PushStyleColor(imgui.Col.FrameBg,inputBg)
+					imgui.PushStyleColor(imgui.Col.FrameBgHovered,imgui.ImVec4(bg[0]*0.7,bg[1]*0.7,bg[2]*0.7,1))
+					imgui.PushStyleColor(imgui.Col.FrameBgActive,imgui.ImVec4(bg[0]*0.9,bg[1]*0.9,bg[2]*0.9,1))
+					if rsEditor.focusInput==i then
+						imgui.SetKeyboardFocusHere()
+						rsEditor.focusInput=false
+					end
+					local enterPressed=imgui.InputText('##line'..i,line.text,512,imgui.InputTextFlags.EnterReturnsTrue)
+					imgui.PopStyleColor(3)
+					imgui.PopItemWidth()
+					if enterPressed then
+						table.insert(rsEditor.lines,i+1,{text=imgui.new.char[512]()})
+						rsEditor.focusInput=i+1
+						rsEditor.scrollToBottom=true
+					end
+					imgui.SameLine()
+					imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(0.8,0.2,0.2,1))
+					imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(0.9,0.3,0.3,1))
+					imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(0.7,0.1,0.1,1))
+					if imgui.Button('X##del'..i,imgui.ImVec2(25,20)) then
+						if #rsEditor.lines>1 then toDelete=i end
+					end
+					imgui.PopStyleColor(3)
+					imgui.PopID()
+					imgui.Spacing()
+				end
+				if toDelete then
+					table.remove(rsEditor.lines,toDelete)
+				end
+				imgui.Dummy(imgui.ImVec2(25,20))
+				imgui.SameLine()
+				imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(bg[0]*0.5,bg[1]*0.5,bg[2]*0.5,0.5))
+				imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(bg[0]*0.7,bg[1]*0.7,bg[2]*0.7,0.7))
+				imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(bg[0]*0.9,bg[1]*0.9,bg[2]*0.9,1))
+				if imgui.Button('Добавить строку##addrsline',imgui.ImVec2(-30,20)) then
+					table.insert(rsEditor.lines,{text=imgui.new.char[512]()})
+					rsEditor.focusInput=#rsEditor.lines
+					rsEditor.scrollToBottom=true
+				end
+				imgui.PopStyleColor(3)
+				if rsEditor.scrollToBottom then
+					imgui.SetScrollHereY(1.0)
+					rsEditor.scrollToBottom=false
+				end
+				imgui.EndChild()
+				imgui.Separator()
+				local btnWidth=(imgui.GetWindowWidth()-30)/2
+				imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(item[0],item[1],item[2],1))
+				imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(item[0]*1.2,item[1]*1.2,item[2]*1.2,1))
+				imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(item[0]*1.4,item[1]*1.4,item[2]*1.4,1))
+				if imgui.Button('Отмена',imgui.ImVec2(btnWidth,30)) then
+					windows.rsEditor[0]=false
+					windows.rsWindow[0]=true
+				end
+				imgui.PopStyleColor(3)
+				imgui.SameLine()
+				imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(0.2,0.7,0.3,1))
+				imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(0.3,0.8,0.4,1))
+				imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(0.15,0.6,0.25,1))
+				if imgui.Button('Сохранить',imgui.ImVec2(btnWidth,30)) then
+					saveRSEditorChanges()
+				end
+				imgui.PopStyleColor(3)
+			end
+		end
+		imgui.End()
+	end
+	imgui.PopStyleColor(3)
+end).Priority=settings.renderPriority+45
+imgui.OnFrame(function() return windows.rsInput[0] end,function()
+	local sizeX,sizeY=getScreenResolution()
+	imgui.SetNextWindowPos(imgui.ImVec2(sizeX/2,sizeY/2),imgui.Cond.Always,imgui.ImVec2(0.5,0.5))
+	imgui.SetNextWindowSize(imgui.ImVec2(400,150),imgui.Cond.Always)
+	local bg=settings.colors.background
+	local item=settings.colors.itemButtons
+	imgui.PushStyleColor(imgui.Col.WindowBg,imgui.ImVec4(bg[0],bg[1],bg[2],0.98))
+	imgui.PushStyleColor(imgui.Col.TitleBg,imgui.ImVec4(item[0],item[1],item[2],1))
+	imgui.PushStyleColor(imgui.Col.TitleBgActive,imgui.ImVec4(item[0]*1.1,item[1]*1.1,item[2]*1.1,1))
+	if imgui.Begin('Ввод данных##rsInput',windows.rsInput,imgui.WindowFlags.NoResize+imgui.WindowFlags.NoCollapse) then
+		imgui.Text(playerInteraction.inputTitle)
+		imgui.Separator()
+		imgui.Spacing()
+		imgui.PushItemWidth(-1)
+		imgui.PushStyleColor(imgui.Col.FrameBg,imgui.ImVec4(bg[0]*0.5,bg[1]*0.5,bg[2]*0.5,1))
+		imgui.PushStyleColor(imgui.Col.FrameBgHovered,imgui.ImVec4(bg[0]*0.7,bg[1]*0.7,bg[2]*0.7,1))
+		imgui.PushStyleColor(imgui.Col.FrameBgActive,imgui.ImVec4(bg[0]*0.9,bg[1]*0.9,bg[2]*0.9,1))
+		local enterPressed=imgui.InputText('##rsinput',playerInteraction.inputText,256,imgui.InputTextFlags.EnterReturnsTrue)
+		imgui.PopStyleColor(3)
+		imgui.PopItemWidth()
+		imgui.Spacing()
+		imgui.Separator()
+		local btnWidth=(imgui.GetWindowWidth()-30)/2
+		imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(item[0],item[1],item[2],1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(item[0]*1.2,item[1]*1.2,item[2]*1.2,1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(item[0]*1.4,item[1]*1.4,item[2]*1.4,1))
+		if imgui.Button('Отмена (ESC)',imgui.ImVec2(btnWidth,30)) or imgui.IsKeyPressed(imgui.Key.Escape) then
+			windows.rsInput[0]=false
+			ffi.fill(playerInteraction.inputText,256)
+		end
+		imgui.PopStyleColor(3)
+		imgui.SameLine()
+		imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(0.2,0.7,0.3,1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(0.3,0.8,0.4,1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(0.15,0.6,0.25,1))
+		if imgui.Button('Готово (Enter)',imgui.ImVec2(btnWidth,30)) or enterPressed then
+			local inputText=ffi.string(playerInteraction.inputText)
+			if inputText~="" then
+				executeRSActionWithInput(playerInteraction.inputType,playerInteraction.targetId,inputText)
+				windows.rsInput[0]=false
+				ffi.fill(playerInteraction.inputText,256)
+			end
+		end
+		imgui.PopStyleColor(3)
+		imgui.End()
+	end
+	imgui.PopStyleColor(3)
+end).Priority=settings.renderPriority+50
+imgui.OnFrame(function() return windows.playerMenu[0] end,function()
+	local sizeX,sizeY=getScreenResolution()
+	imgui.SetNextWindowPos(imgui.ImVec2(sizeX/2,sizeY/2),imgui.Cond.Always,imgui.ImVec2(0.5,0.5))
+	imgui.SetNextWindowSize(imgui.ImVec2(300,425),imgui.Cond.Always)
+	local bg=settings.colors.background
+	local item=settings.colors.itemButtons
+	imgui.PushStyleColor(imgui.Col.WindowBg,imgui.ImVec4(bg[0],bg[1],bg[2],0.98))
+	imgui.PushStyleColor(imgui.Col.TitleBg,imgui.ImVec4(item[0],item[1],item[2],1))
+	imgui.PushStyleColor(imgui.Col.TitleBgActive,imgui.ImVec4(item[0]*1.1,item[1]*1.1,item[2]*1.1,1))
+	if imgui.Begin('Действия с игроком##playerMenu',windows.playerMenu,imgui.WindowFlags.NoResize+imgui.WindowFlags.NoCollapse) then
+		imgui.Text('ID игрока: '..tostring(playerInteraction.targetId))
+		imgui.Text('Имя: '..playerInteraction.targetName)
+		imgui.Separator()
+		imgui.Spacing()
+		imgui.BeginChild('##actions',imgui.ImVec2(0,-50),true)
+		for actionKey,action in pairs(rsSettings.actions) do
+			imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(item[0],item[1],item[2],1))
+			imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(item[0]*1.2,item[1]*1.2,item[2]*1.2,1))
+			imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(item[0]*1.4,item[1]*1.4,item[2]*1.4,1))
+			if imgui.Button(action.name..'##action'..actionKey,imgui.ImVec2(-1,30)) then
+				executeRSAction(actionKey,playerInteraction.targetId)
+			end
+			imgui.PopStyleColor(3)
+			imgui.Spacing()
+		end
+		imgui.EndChild()
+		imgui.Separator()
+		imgui.PushStyleColor(imgui.Col.Button,imgui.ImVec4(item[0],item[1],item[2],1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered,imgui.ImVec4(item[0]*1.2,item[1]*1.2,item[2]*1.2,1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive,imgui.ImVec4(item[0]*1.4,item[1]*1.4,item[2]*1.4,1))
+		if imgui.Button('Закрыть',imgui.ImVec2(-1,30)) then
+			windows.playerMenu[0]=false
+		end
+		imgui.PopStyleColor(3)
+		imgui.End()
+	end
+	imgui.PopStyleColor(3)
+end).Priority=settings.renderPriority+55
 imgui.OnFrame(function() return windows.contextMenu[0] end, function()
 	imgui.SetNextWindowPos(imgui.ImVec2(ui.contextMenu.pos.x, ui.contextMenu.pos.y), imgui.Cond.Always)
 	imgui.SetNextWindowSize(imgui.ImVec2(200, 100), imgui.Cond.Always)
@@ -5602,6 +8519,111 @@ imgui.OnFrame(function() return windows.editBind[0] end, function()
 	imgui.PopStyleColor(3)
 	imgui.End()
 end).Priority = settings.renderPriority + 80
+imgui.OnFrame(function() return bulkInput.active end, function()
+	local sizeX, sizeY = getScreenResolution()
+	imgui.SetNextWindowPos(imgui.ImVec2(sizeX / 2, sizeY / 2), imgui.Cond.Always, imgui.ImVec2(0.5, 0.5))
+	imgui.SetNextWindowSize(imgui.ImVec2(700, 450), imgui.Cond.Always)
+	local bg = settings.colors.background
+	local item = settings.colors.itemButtons
+	imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(bg[0], bg[1], bg[2], 0.98))
+	imgui.PushStyleColor(imgui.Col.TitleBg, imgui.ImVec4(item[0], item[1], item[2], 1))
+	imgui.PushStyleColor(imgui.Col.TitleBgActive, imgui.ImVec4(item[0] * 1.1, item[1] * 1.1, item[2] * 1.1, 1))
+	local windowFlags = imgui.WindowFlags.NoResize + imgui.WindowFlags.NoMove + imgui.WindowFlags.NoCollapse
+	if imgui.Begin(bulkInput.mode == 'questions' and 'Вставить вопросы' or 'Вставить ответы', nil, windowFlags) then
+		imgui.TextWrapped('Введите по одному на строку (максимум 10 строк):')
+		imgui.Spacing()
+		local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
+		imgui.BeginChild('##BulkInputContainer', imgui.ImVec2(-1, 300), false, imgui.WindowFlags.NoScrollbar)
+		local currentText = ffi.string(bulkInput.text)
+		local lineArray = {}
+		for line in (currentText .. "\n"):gmatch("([^\n]*)\n") do
+			table.insert(lineArray, line)
+		end
+		if #lineArray > 10 then
+			lineArray = {table.unpack(lineArray, 1, 10)}
+			local limited = table.concat(lineArray, "\n")
+			ffi.fill(bulkInput.text, 8192)
+			ffi.copy(bulkInput.text, limited)
+		end
+		local lineNumbers = ""
+		for i = 1, #lineArray do
+			lineNumbers = lineNumbers .. tostring(i) .. "\n"
+		end
+		imgui.PushItemWidth(30)
+		imgui.InputTextMultiline('##LineNumbers', imgui.new.char[512](lineNumbers), 512, imgui.ImVec2(30, 280), imgui.InputTextFlags.ReadOnly)
+		imgui.PopItemWidth()
+		imgui.SameLine(0, 5)
+		imgui.PushItemWidth(-1)
+		imgui.InputTextMultiline('##BulkInput', bulkInput.text, 8192, imgui.ImVec2(-1, 280))
+		imgui.PopItemWidth()
+		imgui.EndChild()
+		imgui.Spacing()
+		local finalText = ffi.string(bulkInput.text)
+		local finalLineCount = 1
+		for _ in finalText:gmatch("\n") do
+			finalLineCount = finalLineCount + 1
+		end
+		finalLineCount = math.min(finalLineCount, 10)
+		imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Строк: ' .. finalLineCount .. ' / 10')
+		local buttonWidth = (imgui.GetWindowWidth() - 30) / 2
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0] * 1.2, item[1] * 1.2, item[2] * 1.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0] * 1.4, item[1] * 1.4, item[2] * 1.4, 1))
+		if fa_font then imgui.PushFont(fa_font) end
+		if imgui.Button(fa('xmark') .. ' Отмена', imgui.ImVec2(buttonWidth, 30)) then
+			if fa_font then imgui.PopFont() end
+			bulkInput.active = false
+			ffi.fill(bulkInput.text, 8192)
+		end
+		if fa_font then imgui.PopFont() end
+		imgui.PopStyleColor(3)
+		imgui.SameLine()
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.8, 0.2, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.9, 0.3, 1))
+		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.1, 0.7, 0.1, 1))
+		if fa_font then imgui.PushFont(fa_font) end
+		if imgui.Button(fa('check') .. ' Готово', imgui.ImVec2(buttonWidth, 30)) then
+			if fa_font then imgui.PopFont() end
+			local text = ffi.string(bulkInput.text)
+			local lines = {}
+			for line in text:gmatch("[^\r\n]+") do
+				local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+				if trimmed ~= "" then
+					table.insert(lines, trimmed)
+				end
+			end
+			if #lines > 0 then
+				local efirType = bulkInput.efirType
+				local lineCount = efirLineCount[efirType] or 10
+				for i = 1, math.min(#lines, lineCount) do
+					if bulkInput.mode == 'questions' then
+						ffi.copy(efir.examples[efirType][i], lines[i])
+						if efirType == 'math' then
+							local result, error = calculateMathExpression(lines[i])
+							if result then
+								ffi.copy(efir.answers[efirType][i], result)
+							end
+						end
+					elseif bulkInput.mode == 'answers' then
+						ffi.copy(efir.answers[efirType][i], lines[i])
+					end
+				end
+				saveConfig()
+				chatMessage(u8:decode('[News Helper] Вставлено ' .. math.min(#lines, lineCount) .. ' строк'), 0x00FF00)
+			end
+			bulkInput.active = false
+			ffi.fill(bulkInput.text, 8192)
+		end
+		if fa_font then imgui.PopFont() end
+		imgui.PopStyleColor(3)
+		if imgui.IsKeyPressed(imgui.Key.Escape) then
+			bulkInput.active = false
+			ffi.fill(bulkInput.text, 8192)
+		end
+		imgui.End()
+	end
+	imgui.PopStyleColor(3)
+end).Priority = settings.renderPriority + 120
 imgui.OnFrame(function() return windows.help[0] end, function()
 	local sizeX, sizeY = getScreenResolution()
 	if settings.windowPos.x == -1 or settings.windowPos.y == -1 then
@@ -5630,9 +8652,6 @@ imgui.OnFrame(function() return windows.help[0] end, function()
 		imgui.PushItemWidth(imgui.GetWindowWidth() - resetButtonWidth - expandButtonWidth - settingsButtonWidth - spacing * 3 - 30)
 		local search_changed = false
 		local bg = settings.colors.background
-		imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1))
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1))
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1))
 		if imgui.InputTextWithHint('##search' .. tostring(ui.search.id), 'Поиск по биндам', ui.search.input, sizeof(ui.search.input) - 1) then
 			local s = str(ui.search.input)
 			local new_query = s ~= '' and s or ""
@@ -5643,11 +8662,10 @@ imgui.OnFrame(function() return windows.help[0] end, function()
 				ui.search.resultsValid = false
 			end
 		end
-		imgui.PopStyleColor(3)
 		imgui.PopItemWidth()
 		imgui.SameLine()
 		local itemColor = settings.colors.itemButtons
-		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], 1))
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], itemColor[3]))
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(itemColor[0] * 1.2, itemColor[1] * 1.2, itemColor[2] * 1.2, 1))
 		if fa_font then imgui.PushFont(fa_font) end
 		if imgui.Button(fa('rotate') .. ' Сброс', imgui.ImVec2(resetButtonWidth, 0)) then 
@@ -5660,17 +8678,21 @@ imgui.OnFrame(function() return windows.help[0] end, function()
 		end
 		imgui.PopStyleColor(2)
 		imgui.SameLine()
-		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], 1))
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], itemColor[3]))
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(itemColor[0] * 1.2, itemColor[1] * 1.2, itemColor[2] * 1.2, 1))
 		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(itemColor[0] * 1.4, itemColor[1] * 1.4, itemColor[2] * 1.4, 1))
 		if fa_font then imgui.PushFont(fa_font) end
 		if imgui.Button(fa('gear'), imgui.ImVec2(settingsButtonWidth, 0)) then 
 			if fa_font then imgui.PopFont() end
-			windows.help[0] = false
-			windows.mainSettings[0] = true
-			ui.search.resultsValid = false
-			ui.search.cachedResults = {}
-			ui.search.tmp.helpFind = nil
+			if efir.auto.active and not efir.auto.paused and not efir.auto.pausedDuringQuestions and not efir.auto.pausedDuringStartup then
+				chatMessage(u8:decode('[News Helper] Нельзя открыть настройки во время активного автоэфира!'), 0xFF0000)
+			else
+				windows.help[0] = false
+				windows.mainSettings[0] = true
+				ui.search.resultsValid = false
+				ui.search.cachedResults = {}
+				ui.search.tmp.helpFind = nil
+			end
 		end
 		if fa_font then imgui.PopFont() end
 		imgui.PopStyleColor(3)
@@ -5678,7 +8700,7 @@ imgui.OnFrame(function() return windows.help[0] end, function()
 			imgui.SetTooltip('Открыть настройки')
 		end
 		imgui.SameLine()
-		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], 1))
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], itemColor[3]))
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(itemColor[0] * 1.2, itemColor[1] * 1.2, itemColor[2] * 1.2, 1))
 		local expandButtonText = editor.allExpanded and (fa('square_minus') .. ' Свернуть все') or (fa('square_plus') .. ' Развернуть все')
 		if fa_font then imgui.PushFont(fa_font) end
@@ -5732,7 +8754,7 @@ imgui.OnFrame(function() return windows.help[0] end, function()
 								local item = category[j]
 								if buttonsInRow > 0 and buttonsInRow < 3 then imgui.SameLine() end
 								local itemColor = settings.colors.itemButtons
-								imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], 1))
+								imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], itemColor[3]))
 								imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(itemColor[0] * 1.2, itemColor[1] * 1.2, itemColor[2] * 1.2, 1))
 								imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(itemColor[0] * 1.4, itemColor[1] * 1.4, itemColor[2] * 1.4, 1))
 								local buttonName = item[1] or '' 
@@ -5767,7 +8789,7 @@ imgui.OnFrame(function() return windows.help[0] end, function()
 		imgui.EndChild()
 		imgui.Separator()
 		local itemColor = settings.colors.itemButtons
-		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], 1))
+		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(itemColor[0], itemColor[1], itemColor[2], itemColor[3]))
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(itemColor[0] * 1.2, itemColor[1] * 1.2, itemColor[2] * 1.2, 1))
 		if fa_font then imgui.PushFont(fa_font) end
 		if imgui.Button(fa('pen_to_square') .. ' Редактор', imgui.ImVec2(imgui.GetWindowWidth() - 10, 30)) then
@@ -5965,13 +8987,9 @@ imgui.OnFrame(function() return windows.pro[0] end, function()
 		local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
 		local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
 		local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
-		imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-		imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-		imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 		imgui.PushItemWidth(searchInputWidth)
 		imgui.InputTextWithHint('##ProSearch', 'Поиск...', ui.search.pro.input, 256)
 		imgui.PopItemWidth()
-		imgui.PopStyleColor(3)
 		imgui.SameLine()
 		imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
@@ -6144,11 +9162,7 @@ imgui.OnFrame(function() return windows.addCustomBind[0] end, function()
 	local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
 	local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
 	local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	local enterPressed = imgui.InputText('##NewBindCmd', helpers.newBindCommand, 32, imgui.InputTextFlags.EnterReturnsTrue)
-	imgui.PopStyleColor(3)
 	imgui.PopItemWidth()
 	imgui.Spacing()
 	imgui.TextColored(imgui.ImVec4(1, 1, 0, 1), 'После создания сразу назначьте клавишу!')
@@ -6204,7 +9218,7 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 	local windowSize = tabWindowSizes[data.currentMainSettingsTab] or {x = 800, y = 600}
 	imgui.SetNextWindowPos(imgui.ImVec2(sizeX / 2, sizeY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
 	imgui.SetNextWindowSize(imgui.ImVec2(windowSize.x, windowSize.y), imgui.Cond.Always)
-	local windowFlags = imgui.WindowFlags.NoCollapse + settings.topMostFlags
+	local windowFlags = imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize + settings.topMostFlags
 	local isOpen = windows.mainSettings
 	if imgui.Begin('News Helper - Настройки', isOpen, windowFlags) then
 		local item = settings.colors.itemButtons
@@ -6215,9 +9229,27 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 		local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
 		local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
 		local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
-		imgui.PushStyleColor(imgui.Col.Tab, itemColor)
-		imgui.PushStyleColor(imgui.Col.TabHovered, itemColorHovered)
-		imgui.PushStyleColor(imgui.Col.TabActive, itemColorActive)
+		local currentThemeColors = settings.themes.list.custom.colors
+		local currentThemeColors = settings.themes.list.custom.colors
+		if not currentThemeColors or not next(currentThemeColors) then
+			currentThemeColors = settings.themes.list.default.colors
+		end
+		local tabColor = currentThemeColors["Tab"] or {0.18, 0.35, 0.58, 0.86}
+		local tabActiveColor = {
+			math.min(tabColor[1] * 1.3, 1),
+			math.min(tabColor[2] * 1.3, 1),
+			math.min(tabColor[3] * 1.3, 1),
+			tabColor[4]
+		}
+		local tabHoveredColor = {
+			math.min(tabColor[1] * 1.15, 1),
+			math.min(tabColor[2] * 1.15, 1),
+			math.min(tabColor[3] * 1.15, 1),
+			tabColor[4]
+		}
+		imgui.PushStyleColor(imgui.Col.Tab, imgui.ImVec4(tabColor[1], tabColor[2], tabColor[3], tabColor[4]))
+		imgui.PushStyleColor(imgui.Col.TabActive, imgui.ImVec4(tabActiveColor[1], tabActiveColor[2], tabActiveColor[3], tabActiveColor[4]))
+		imgui.PushStyleColor(imgui.Col.TabHovered, imgui.ImVec4(tabHoveredColor[1], tabHoveredColor[2], tabHoveredColor[3], tabHoveredColor[4]))
 		if imgui.BeginTabBar('##MainTabs') then
 			imgui.PushItemWidth(0)
 			if fa_font then imgui.PushFont(fa_font) end
@@ -6249,43 +9281,20 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 					end
 				end
 				imgui.SameLine()
-				local availableWidth = imgui.GetWindowWidth() - imgui.GetCursorPosX() - 20
 				imgui.SetCursorPos(imgui.ImVec2(imgui.GetWindowWidth() - 165, 60))
-				imgui.PushStyleColor(imgui.Col.Button,		imgui.ImVec4(0.2, 0.7, 0.3, 1))  
-				imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.85, 0.4, 1)) 
-				imgui.PushStyleColor(imgui.Col.ButtonActive,  imgui.ImVec4(0.15, 0.6, 0.25, 1))
+				imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.7, 0.3, 1))
+				imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.85, 0.4, 1))
+				imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.15, 0.6, 0.25, 1))
 				if fa_font then imgui.PushFont(fa_font) end
-				if imgui.Button(fa('arrows_rotate') .. ' Проверить обновления', imgui.ImVec2(145, 50)) then
+				if imgui.Button(fa('arrows_rotate') .. ' Проверить обновления', imgui.ImVec2(145,50)) then
 					if fa_font then imgui.PopFont() end
 					checkForUpdates(true)
 				end
+				if fa_font then imgui.PopFont() end
 				imgui.PopStyleColor(3)
 				if imgui.IsItemHovered() then
 					imgui.BeginTooltip()
 					imgui.TextColored(imgui.ImVec4(0.3, 0.85, 0.4, 1), 'Проверить наличие новых версий скрипта')
-					imgui.TextColored(imgui.ImVec4(1, 0.7, 0.2, 1), 'Рекомендуется обновлять!')
-					imgui.EndTooltip()
-				end
-				imgui.SetCursorPosX(imgui.GetWindowWidth() - 165)
-				if update_available then
-					imgui.PushStyleColor(imgui.Col.Button,		imgui.ImVec4(0.8, 0.2, 0.2, 1))  
-					imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.3, 1)) 
-					imgui.PushStyleColor(imgui.Col.ButtonActive,  imgui.ImVec4(0.7, 0.1, 0.1, 1))
-				else
-					imgui.PushStyleColor(imgui.Col.Button,		imgui.ImVec4(0.2, 0.6, 0.8, 1))  
-					imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.75, 0.9, 1)) 
-					imgui.PushStyleColor(imgui.Col.ButtonActive,  imgui.ImVec4(0.15, 0.5, 0.7, 1))
-				end
-				if fa_font then imgui.PushFont(fa_font) end
-				if imgui.Button(fa('download') .. ' Установить обновление', imgui.ImVec2(145, 50)) then
-					if fa_font then imgui.PopFont() end
-					installUpdate()
-				end
-				imgui.PopStyleColor(3)
-				if imgui.IsItemHovered() then
-					imgui.BeginTooltip()
-					imgui.TextColored(imgui.ImVec4(0.3, 0.75, 0.9, 1), 'Установить последнее обновление')
-					imgui.TextColored(imgui.ImVec4(1, 0.7, 0.2, 1), 'Скрипт перезагрузится автоматически!')
 					imgui.EndTooltip()
 				end
 				imgui.Separator()
@@ -6296,8 +9305,9 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 				do
 					local windowWidth = imgui.GetWindowWidth()
 					local cursorPos = imgui.GetCursorPos()
-					imgui.SetCursorPosX(windowWidth - buttonWidth - 20)
-					imgui.SetCursorPosY(cursorPos.y - buttonHeight + 8)
+					local spacing = 5
+					imgui.SetCursorPosX(windowWidth - (buttonWidth * 2) - spacing + 130)
+					imgui.SetCursorPosY(cursorPos.y - 18)
 					imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.9, 0.5, 0.2, 1))
 					imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(1.0, 0.6, 0.3, 1))
 					imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.8, 0.4, 0.1, 1))
@@ -6308,6 +9318,29 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 					if imgui.IsItemHovered() then
 						imgui.BeginTooltip()
 						imgui.TextColored(imgui.ImVec4(1, 0.8, 0.4, 1), 'Полностью очищает буфер объявлений')
+						imgui.EndTooltip()
+					end
+					imgui.SetCursorPosX(windowWidth - (buttonWidth * 2) - spacing + 130)
+					imgui.SetCursorPosY(cursorPos.y - 18 + buttonHeight + spacing)
+					imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.6, 0.8, 1))
+					imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.7, 0.9, 1))
+					imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.1, 0.5, 0.7, 1))
+					if fa_font then imgui.PushFont(fa_font) end
+					if imgui.Button(fa('user_tie') .. ' Панель зама', imgui.ImVec2(buttonWidth, buttonHeight)) then
+						if fa_font then imgui.PopFont() end
+						if data.myRankNumber>=9 or isDevMode then
+							windows.rsWindow[0]=true
+							windows.mainSettings[0]=false
+							loadRSSettings()
+						else
+							chatMessage(u8:decode('[News Helper] Доступно с 9-го ранга!'),0xFF0000)
+						end
+					end
+					if fa_font then imgui.PopFont() end
+					imgui.PopStyleColor(3)
+					if imgui.IsItemHovered() then
+						imgui.BeginTooltip()
+						imgui.TextColored(imgui.ImVec4(0.3, 0.85, 0.4, 1), 'Панель заместителя/лидера для работы с сотрудниками')
 						imgui.EndTooltip()
 					end
 					imgui.SetCursorPos(cursorPos)
@@ -6370,14 +9403,10 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 				imgui.Text('СМИ:')
 				imgui.SameLine(120)
 				imgui.PushItemWidth(200)
-				imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-				imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-				imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 				if imgui.InputText('##UserOrg', user.org, ffi.sizeof(user.org)) then
 					data.mainIni.config.c_cnn = str(user.org)
 					saveConfig()
 				end
-				imgui.PopStyleColor(3)
 				imgui.PopItemWidth()
 				if imgui.IsItemHovered() then
 					imgui.SetTooltip('Введите название вашего СМИ (например: СМИ-ЛС, СМИ-СФ)')
@@ -6385,42 +9414,37 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 				imgui.Text('Город:')
 				imgui.SameLine(120)
 				imgui.PushItemWidth(200)
-				imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-				imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-				imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 				if imgui.InputText('##UserCity', user.city, ffi.sizeof(user.city)) then
 					data.mainIni.config.c_city_n = str(user.city)
 					saveConfig()
 				end
-				imgui.PopStyleColor(3)
 				imgui.PopItemWidth()
 				if imgui.IsItemHovered() then
 					imgui.SetTooltip('Введите ваш город (например: Лос-Сантос, Сан-Фиерро)')
 				end
 				imgui.Text('Пол:')
 				imgui.SameLine(120)
-				imgui.PushStyleColor(imgui.Col.CheckMark, itemColorActive)
+				setupCheckboxStyle()
 				if imgui.RadioButtonIntPtr('Мужской', user.gender, 2) then
 					data.mainIni.config.c_pol = user.gender[0]
 					saveConfig()
 				end
+				cleanupCheckboxStyle()
 				imgui.SameLine()
+				setupCheckboxStyle()
 				if imgui.RadioButtonIntPtr('Женский', user.gender, 1) then
 					data.mainIni.config.c_pol = user.gender[0]
 					saveConfig()
 				end
+				cleanupCheckboxStyle()
 				imgui.Spacing()
 				imgui.Separator()
 				imgui.Spacing()
 				imgui.Text('Название волны:')
 				imgui.SameLine(120)
 				imgui.PushItemWidth(150)
-				imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-				imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-				imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 				if imgui.InputText('##WaveTag', user.waveTag, ffi.sizeof(user.waveTag)) then
 				end
-				imgui.PopStyleColor(3)
 				imgui.PopItemWidth()
 				if imgui.IsItemHovered() then
 					imgui.SetTooltip('Короткое название волны для биндов (например: VaF, ViC и т.д)')
@@ -6441,13 +9465,12 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 					imgui.TextWrapped('Заменит ВСЕ теги в квадратных скобках [] во всех биндах')
 					imgui.EndTooltip()
 				end
-				imgui.PopStyleColor()
 				imgui.Spacing()
 				imgui.Separator()
 				imgui.Spacing()
 				imgui.Text('Вариант биндов:')
 				imgui.SameLine(120)
-				imgui.PushStyleColor(imgui.Col.CheckMark, itemColorActive)
+				setupCheckboxStyle()
 				if imgui.RadioButtonIntPtr('Вариант 1', imgui.new.int(data.selectedBindsVariant), 1) then
 					if data.selectedBindsVariant ~= 1 then
 						data.selectedBindsVariant = 1
@@ -6456,7 +9479,9 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 						chatMessage(u8:decode('[News Helper] Вариант биндов изменен! Биндов перезагружены.'), 0x00FF00)
 					end
 				end
+				cleanupCheckboxStyle()
 				imgui.SameLine()
+				setupCheckboxStyle()
 				if imgui.RadioButtonIntPtr('Вариант 2', imgui.new.int(data.selectedBindsVariant), 2) then
 					if data.selectedBindsVariant ~= 2 then
 						data.selectedBindsVariant = 2
@@ -6465,38 +9490,122 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 						chatMessage(u8:decode('[News Helper] Вариант биндов изменен! Биндов перезагружены.'), 0x00FF00)
 					end
 				end
-				imgui.PopStyleColor()
+				cleanupCheckboxStyle()
 				imgui.Spacing()
 				imgui.Separator()
 				imgui.Spacing()
 				imgui.Text('Цвета:')
 				imgui.Spacing()
-				imgui.Text('Фон окон:'); imgui.SameLine(200)
-				if imgui.ColorEdit3('##bg', settings.colors.background, imgui.ColorEditFlags.NoInputs) then
-					applyStyle(); saveConfig()
+				imgui.Text('Выберите тему:')
+				imgui.Spacing()
+				local themeOrder = {"default", "blue", "red", "green", "orange", "purple", "custom"}
+				local themeColumns = 7
+				for idx, themeKey in ipairs(themeOrder) do
+					local theme = settings.themes.list[themeKey]
+					if (idx - 1) % themeColumns ~= 0 then
+						imgui.SameLine()
+					end
+					local isSelected = settings.themes.current == themeKey
+					if isSelected then
+						imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.8, 0.2, 1))
+						imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.9, 0.3, 1))
+						imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.1, 0.7, 0.1, 1))
+					else
+						imgui.PushStyleColor(imgui.Col.Button, itemColor)
+						imgui.PushStyleColor(imgui.Col.ButtonHovered, itemColorHovered)
+						imgui.PushStyleColor(imgui.Col.ButtonActive, itemColorActive)
+					end
+					if imgui.Button(theme.name .. '##theme' .. themeKey, imgui.ImVec2(100, 30)) then
+						settings.themes.current = themeKey
+						if themeKey ~= "custom" then
+							settings.themes.list.custom.colors = {}
+							for k, v in pairs(theme.colors) do
+								settings.themes.list.custom.colors[k] = {v[1], v[2], v[3], v[4]}
+							end
+						end
+						applyStyle()
+						saveConfig()
+					end
+					imgui.PopStyleColor(3)
 				end
-				imgui.Text('Категории:'); imgui.SameLine(200)
-				if imgui.ColorEdit3('##cat', settings.colors.categoryButtons, imgui.ColorEditFlags.NoInputs) then
-					applyStyle(); saveConfig()
+				imgui.Spacing()
+				imgui.Separator()
+				imgui.Spacing()
+				imgui.Text('Настройка цветов:')
+				imgui.Spacing()
+				local colorElements = {
+					{"Text", "Текст"},
+					{"Border", "Границы"},
+					{"WindowBg", "Фон окна"},
+					{"TitleBgActive", "Заголовок"},
+					{"PopupBg", "Всплывающие"},
+					{"ScrollbarGrab", "Скроллбар"},
+					{"Button", "Кнопка"},
+					{"FrameBgHovered", "Поля ввода"},
+					{"FrameBgActive", "Фон чекбокса"},
+					{"Tab", "Вкладка"},
+					{"ResizeGrip", "Изменение"},
+					{"CategoryColor", "Цвет категории"}
+				}
+				local currentThemeColors = settings.themes.list.custom.colors
+				if not currentThemeColors or not next(currentThemeColors) then
+					currentThemeColors = settings.themes.list.default.colors
 				end
-				imgui.Text('Кнопки биндов:'); imgui.SameLine(200)
-				if imgui.ColorEdit3('##item', settings.colors.itemButtons, imgui.ColorEditFlags.NoInputs) then
-					applyStyle(); saveConfig()
+				local itemsPerRow = 3
+				local labelWidth = 120
+				for i = 1, #colorElements do
+					local element = colorElements[i]
+					local col = (i - 1) % itemsPerRow
+					if col > 0 then
+						imgui.SameLine()
+					end
+					imgui.BeginGroup()
+					imgui.Text(element[2])
+					imgui.SameLine(labelWidth)
+					if not currentThemeColors[element[1]] then
+						currentThemeColors[element[1]] = {1, 1, 1, 1}
+					end
+					local color = imgui.new.float[4](
+						currentThemeColors[element[1]][1],
+						currentThemeColors[element[1]][2],
+						currentThemeColors[element[1]][3],
+						currentThemeColors[element[1]][4]
+					)
+					imgui.PushItemWidth(120)
+					if imgui.ColorEdit4('##color' .. element[1], color, imgui.ColorEditFlags.NoInputs + imgui.ColorEditFlags.AlphaBar) then
+						settings.themes.current = "custom"
+						settings.themes.list.custom.colors[element[1]] = {color[0], color[1], color[2], color[3]}
+						applyStyle()
+						saveConfig()
+					end
+					imgui.PopItemWidth()
+					imgui.EndGroup()
 				end
 				imgui.Spacing()
 				imgui.PushStyleColor(imgui.Col.Button, itemColor)
 				imgui.PushStyleColor(imgui.Col.ButtonHovered, itemColorHovered)
 				imgui.PushStyleColor(imgui.Col.ButtonActive, itemColorActive)
 				if fa_font then imgui.PushFont(fa_font) end
-				if imgui.Button(fa('rotate_left') .. ' Сбросить цвета', imgui.ImVec2(150, 25)) then
-				if fa_font then imgui.PopFont() end
-					settings.colors.background[0], settings.colors.background[1], settings.colors.background[2] = 0.07, 0.07, 0.07
-					settings.colors.categoryButtons[0], settings.colors.categoryButtons[1], settings.colors.categoryButtons[2] = 0.12, 0.12, 0.12
-					settings.colors.itemButtons[0], settings.colors.itemButtons[1], settings.colors.itemButtons[2] = 0.20, 0.20, 0.20
-					applyStyle(); saveConfig()
+				if imgui.Button(fa('rotate_left') .. ' Сбросить тему', imgui.ImVec2(170, 25)) then
+					if settings.themes.current ~= "custom" then
+						local baseTheme = settings.themes.list[settings.themes.current]
+						settings.themes.list.custom.colors = {}
+						for k, v in pairs(baseTheme.colors) do
+							settings.themes.list.custom.colors[k] = {v[1], v[2], v[3], v[4]}
+						end
+					else
+						settings.themes.list.custom.colors = {}
+						for k, v in pairs(settings.themes.list.default.colors) do
+							settings.themes.list.custom.colors[k] = {v[1], v[2], v[3], v[4]}
+						end
+					end
+					applyStyle()
+					saveConfig()
 				end
+				if fa_font then imgui.PopFont() end
 				imgui.PopStyleColor(3)
-				imgui.Separator(); imgui.Spacing()
+				imgui.Separator()
+				imgui.Spacing()
 				imgui.Text('Окно объявлений:')
 				imgui.PushStyleColor(imgui.Col.Button, itemColor)
 				imgui.PushStyleColor(imgui.Col.ButtonHovered, itemColorHovered)
@@ -6528,9 +9637,10 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 					chatMessage(u8:decode('[News Helper] Размер окна объявлений сброшен'), 0x00FF00)
 				end
 				imgui.PopStyleColor(3)
-				imgui.Separator(); imgui.Spacing()
+				imgui.Separator()
+				imgui.Spacing()
 				imgui.Text('Автобуфер:')
-				imgui.PushStyleColor(imgui.Col.CheckMark, itemColorActive)
+				setupCheckboxStyle()
 				if imgui.Checkbox('Включить автосохранение в буфер', flags.autoBufferEnabled) then
 					saveConfig()
 					if flags.autoBufferEnabled[0] then
@@ -6539,31 +9649,27 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 						chatMessage(u8:decode('[News Helper] Автобуфер отключен'), 0xFF0000)
 					end
 				end
-				imgui.PopStyleColor()
+				cleanupCheckboxStyle()
 				imgui.Spacing()
 				imgui.Text('Лимит буфера:')
 				imgui.SameLine(100)
 				imgui.PushItemWidth(150)
-				imgui.PushStyleColor(imgui.Col.SliderGrab, itemColor)
-				imgui.PushStyleColor(imgui.Col.SliderGrabActive, itemColorActive)
-				imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0x1F/255, 0x1F/255, 0x1F/255, 1))
-				imgui.PushStyleColor(imgui.Col.FrameBgHovered, imgui.ImVec4(0x1F/255, 0x1F/255, 0x1F/255, 1))
-				imgui.PushStyleColor(imgui.Col.FrameBgHovered, imgui.ImVec4(0x1F/255, 0x1F/255, 0x1F/255, 1))
+				setupSliderStyle()
 				local tempBufferLimit = imgui.new.int(settings.maxBufferSize)
 				if imgui.SliderInt('##BufferLimit', tempBufferLimit, 1, 1000) then
 					settings.maxBufferSize = tempBufferLimit[0]
 					saveConfig()
 				end
-				imgui.PopStyleColor(5)
+				cleanupSliderStyle()
 				imgui.PopItemWidth()
 				imgui.SameLine()
 				local textSize = imgui.CalcTextSize(tostring(settings.maxBufferSize))
 				local inputWidth = textSize.x + 8.7
 				imgui.PushItemWidth(inputWidth)
 				local bufferLimitInput = imgui.new.int(settings.maxBufferSize)
-				imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-				imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-				imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
+				imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0x1F/255, 0x1F/255, 0x1F/255, 1))
+				imgui.PushStyleColor(imgui.Col.FrameBgHovered, imgui.ImVec4(0x1F/255, 0x1F/255, 0x1F/255, 1))
+				imgui.PushStyleColor(imgui.Col.FrameBgActive, imgui.ImVec4(0x1F/255, 0x1F/255, 0x1F/255, 1))
 				if imgui.InputInt('##BufferLimitInput', bufferLimitInput, 0, 0, imgui.InputTextFlags.EnterReturnsTrue) then
 					local value = bufferLimitInput[0]
 					if value < 1 then value = 1 end
@@ -6571,14 +9677,16 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 					settings.maxBufferSize = value
 					saveConfig()
 				end
+				imgui.PopStyleColor(3)
+				imgui.PopItemWidth()
 				imgui.Separator()
 				imgui.Spacing()
 				imgui.Text('Дополнительные настройки:')
-				imgui.PushStyleColor(imgui.Col.CheckMark, itemColorActive)
+				setupCheckboxStyle()
 				if imgui.Checkbox('Тихий режим (убрать уведомления в чат)', settings.silentMode) then
 					saveConfig()
 				end
-				imgui.PopStyleColor()
+				cleanupCheckboxStyle()
 				if imgui.IsItemHovered() then
 					imgui.SetTooltip('Отключает все сообщения в чат кроме загрузки скрипта')
 				end
@@ -6603,6 +9711,27 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 					imgui.EndTooltip()
 				end
 				imgui.Spacing()
+				imgui.Separator()
+				imgui.Spacing()
+				imgui.Text('Авто-РП:')
+				setupCheckboxStyle()
+				if imgui.Checkbox('Автоматическое форматирование сообщений', autoRP.enabled) then
+					saveConfig()
+					if autoRP.enabled[0] then
+						chatMessage(u8:decode('[News Helper] Авто-РП включено'), 0x00FF00)
+					else
+						chatMessage(u8:decode('[News Helper] Авто-РП отключено'), 0xFF0000)
+					end
+				end
+				cleanupCheckboxStyle()
+				if imgui.IsItemHovered() then
+					imgui.BeginTooltip()
+					imgui.PushTextWrapPos(300)
+					imgui.Text('Автоматически добавляет заглавную букву')
+					imgui.Text('в начало и точку в конец каждого сообщения')
+					imgui.PopTextWrapPos()
+					imgui.EndTooltip()
+				end
 				imgui.EndTabItem()
 			end
 			if fa_font then imgui.PushFont(fa_font) end
@@ -6612,7 +9741,7 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 				imgui.Text('Настройки автологина:')
 				imgui.Separator()
 				imgui.Spacing()
-				imgui.PushStyleColor(imgui.Col.CheckMark, itemColorActive)
+				setupCheckboxStyle()
 				if imgui.Checkbox('Включить автологин', settings.autologin.enabled) then
 					saveConfig()
 					if settings.autologin.enabled[0] then
@@ -6621,19 +9750,15 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 						chatMessage(u8:decode('[News Helper] Автологин отключен'), 0xFF0000)
 					end
 				end
-				imgui.PopStyleColor()
+				cleanupCheckboxStyle()
 				imgui.Spacing()
 				if settings.autologin.enabled[0] then
 					imgui.Text('Пароль от аккаунта:')
 					imgui.PushItemWidth(300)
 					local passwordFlags = settings.autologin.showPassword[0] and 0 or imgui.InputTextFlags.Password
-					imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-					imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-					imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 					if imgui.InputTextWithHint('##AutologinPassword', 'Введите пароль', settings.autologin.password, sizeof(settings.autologin.password), passwordFlags) then
 						saveConfig()
 					end
-					imgui.PopStyleColor(3)
 					imgui.PopItemWidth()
 					imgui.SameLine()
 					imgui.PushStyleColor(imgui.Col.Button, itemColor)
@@ -6647,9 +9772,6 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 					imgui.Text('Пин-код:')
 					imgui.PushItemWidth(150)
 					local pincodeFlags = settings.autologin.showPincode[0] and 0 or imgui.InputTextFlags.Password
-					imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-					imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-					imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 					if imgui.InputTextWithHint('##AutologinPincode', 'Пин-код', settings.autologin.pincode, sizeof(settings.autologin.pincode), pincodeFlags) then
 						local input_string = ffi.string(settings.autologin.pincode)
 						local filtered_string = input_string:gsub('%D', '')
@@ -6658,7 +9780,6 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 						end
 						saveConfig()
 					end
-					imgui.PopStyleColor(3)
 					imgui.PopItemWidth()
 					imgui.SameLine()
 					imgui.PushStyleColor(imgui.Col.Button, itemColor)
@@ -6671,7 +9792,7 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 					imgui.Spacing()
 					imgui.Separator()
 					imgui.Spacing()
-					imgui.PushStyleColor(imgui.Col.CheckMark, itemColorActive)
+					setupCheckboxStyle()
 					if imgui.Checkbox('Автоматически появляться в фракции', flags.autospawnEnabled) then
 						saveConfig()
 						if flags.autospawnEnabled[0] then
@@ -6680,6 +9801,7 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 							chatMessage(u8:decode('[News Helper] Автоспавн отключен'), 0xFF0000)
 						end
 					end
+					cleanupCheckboxStyle()
 					imgui.PopStyleColor()
 					if imgui.IsItemHovered() then
 						imgui.SetTooltip('При входе в игру автоматически выберет спавн на базе фракции')
@@ -6697,153 +9819,7 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 			if imgui.BeginTabItem(fa('keyboard') .. ' Бинды') then
 			if fa_font then imgui.PopFont() end
 				data.currentMainSettingsTab = 3
-				imgui.Text('Настройка биндов:')
-				imgui.Separator()
-				imgui.Spacing()
-				imgui.Text('Открыть /edit:')
-				local toRemoveEdit = nil
-				for i = 1, #ui.hotkeys.edit do
-					imgui.SameLine()
-					local buttonText = ui.hotkeys.isSettingEdit and ui.hotkeys.currentIndex == i and 
-									 'Нажмите клавишу...' or getKeyName(ui.hotkeys.edit[i])
-					imgui.PushStyleColor(imgui.Col.Button, itemColor)
-					imgui.PushStyleColor(imgui.Col.ButtonHovered, itemColorHovered)
-					imgui.PushStyleColor(imgui.Col.ButtonActive, itemColorActive)
-					if imgui.Button(buttonText .. '##editkey' .. i, imgui.ImVec2(130, 25)) then
-						ui.hotkeys.isSettingEdit = true
-						ui.hotkeys.isSettingHelp = false
-						ui.hotkeys.isSettingPro = false
-						ui.hotkeys.isSettingCustom = false
-						ui.hotkeys.currentIndex = i
-						ui.hotkeys.tempBuffer = {}
-					end
-					imgui.PopStyleColor(3)
-					if #ui.hotkeys.edit > 1 then
-						imgui.SameLine()
-						imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.2, 1))
-						imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.3, 1))
-						imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.1, 0.1, 1))
-						if imgui.Button('X##removeeditkey' .. i, imgui.ImVec2(25, 25)) then
-							toRemoveEdit = i
-						end
-						imgui.PopStyleColor(3)
-					end
-				end
-				if toRemoveEdit then
-					table.remove(ui.hotkeys.edit, toRemoveEdit)
-					saveConfig()
-				end
-				if #ui.hotkeys.edit < 3 then
-					imgui.SameLine()
-					imgui.PushStyleColor(imgui.Col.Button, itemColor)
-					imgui.PushStyleColor(imgui.Col.ButtonHovered, itemColorHovered)
-					imgui.PushStyleColor(imgui.Col.ButtonActive, itemColorActive)
-					if imgui.Button('+##addeditkey', imgui.ImVec2(25, 25)) then
-						table.insert(ui.hotkeys.edit, vk.VK_Q)
-						ui.hotkeys.isSettingEdit = true
-						ui.hotkeys.isSettingHelp = false
-						ui.hotkeys.isSettingPro = false
-						ui.hotkeys.isSettingCustom = false
-						ui.hotkeys.currentIndex = #ui.hotkeys.edit
-						ui.hotkeys.tempBuffer = {}
-					end
-					imgui.PopStyleColor(3)
-					if imgui.IsItemHovered() then
-						imgui.SetTooltip('Добавить клавишу к комбинации (макс. 3)')
-					end
-				end
-				imgui.Spacing()
-				imgui.Separator()
-				imgui.Text('Пользовательские команды:')
-				imgui.Spacing()
-				imgui.PushStyleColor(imgui.Col.Button, itemColor)
-				imgui.PushStyleColor(imgui.Col.ButtonHovered, itemColorHovered)
-				imgui.PushStyleColor(imgui.Col.ButtonActive, itemColorActive)
-				if fa_font then imgui.PushFont(fa_font) end
-				if imgui.Button(fa('circle_plus') .. ' Добавить команду', imgui.ImVec2(150, 25)) then
-				if fa_font then imgui.PopFont() end
-					windows.addCustomBind[0] = true
-					if not helpers.newBindCommand then
-						helpers.newBindCommand = imgui.new.char[32]()
-					else
-						ffi.fill(helpers.newBindCommand, 32)
-					end
-				end
-				imgui.PopStyleColor(3)		
-				if next(data.customBinds) then
-					imgui.Spacing()
-					imgui.Text('Существующие команды:')
-					imgui.Separator()
-					for cmd, hotkey in pairs(data.customBinds) do
-						imgui.Text('/' .. cmd)
-						imgui.SameLine()
-						imgui.Text('Горячая клавиша:')
-						for i = 1, #hotkey do
-							imgui.SameLine()
-							local buttonText = (not ui.hotkeys.isSettingHelp and not ui.hotkeys.isSettingPro and not ui.hotkeys.isSettingEdit and ui.hotkeys.isSettingCustom == cmd and ui.hotkeys.currentIndex == i) and 
-											 'Нажмите клавишу...' or getKeyName(hotkey[i])
-							imgui.PushStyleColor(imgui.Col.Button, itemColor)
-							imgui.PushStyleColor(imgui.Col.ButtonHovered, itemColorHovered)
-							imgui.PushStyleColor(imgui.Col.ButtonActive, itemColorActive)
-							if imgui.Button(buttonText .. '##customkey' .. cmd .. i, imgui.ImVec2(100, 20)) then
-								ui.hotkeys.isSettingHelp = false
-								ui.hotkeys.isSettingPro = false
-								ui.hotkeys.isSettingEdit = false
-								ui.hotkeys.isSettingCustom = cmd
-								ui.hotkeys.currentIndex = i
-								ui.hotkeys.tempBuffer = {}
-							end
-							imgui.PopStyleColor(3)
-							if #hotkey > 1 then
-								imgui.SameLine()
-								imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.2, 1))
-								imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.3, 1))
-								imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.1, 0.1, 1))
-								if imgui.Button('X##removekey' .. cmd .. i, imgui.ImVec2(20, 20)) then
-									table.remove(hotkey, i)
-									saveConfig()
-								end
-								imgui.PopStyleColor(3)
-							end
-						end
-						if #hotkey < 3 then
-							imgui.SameLine()
-							imgui.PushStyleColor(imgui.Col.Button, itemColor)
-							imgui.PushStyleColor(imgui.Col.ButtonHovered, itemColorHovered)
-							imgui.PushStyleColor(imgui.Col.ButtonActive, itemColorActive)
-							if imgui.Button('+##addkey' .. cmd, imgui.ImVec2(20, 20)) then
-								table.insert(hotkey, vk.VK_F1)
-								ui.hotkeys.isSettingHelp = false
-								ui.hotkeys.isSettingPro = false
-								ui.hotkeys.isSettingEdit = false
-								ui.hotkeys.isSettingCustom = cmd
-								ui.hotkeys.currentIndex = #hotkey
-								ui.hotkeys.tempBuffer = {}
-							end
-							imgui.PopStyleColor(3)
-						end
-						imgui.SameLine()
-						imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.8, 0.2, 0.2, 1))
-						imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.9, 0.3, 0.3, 1))
-						imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.1, 0.1, 1))
-						if fa_font then imgui.PushFont(fa_font) end
-						if imgui.Button(fa('trash_can') .. ' Удалить##del' .. cmd, imgui.ImVec2(66, 20)) then
-						if fa_font then imgui.PopFont() end
-							data.customBinds[cmd] = nil
-							saveConfig()
-							chatMessage(u8:decode('[News Helper] Команда /' .. cmd .. ' удалена!'), 0xFF0000)
-						end
-						imgui.PopStyleColor(3)
-						imgui.Spacing()
-					end
-				end
-				imgui.Separator()
-				imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Подсказка:')
-				imgui.TextWrapped('Создавайте команды с горячими клавишами. При нажатии горячей клавиши будет выполняться созданная команда. Можно комбинировать до 3 клавиш.')
-				imgui.Spacing()
-				imgui.Separator()
-				imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Бинд для /edit:')
-				imgui.TextWrapped('Бинд для /edit позволяет быстро открывать редактор объявлений')
+				renderBinderTab()
 				imgui.EndTabItem()
 			end
 			if fa_font then imgui.PushFont(fa_font) end
@@ -7122,7 +10098,7 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 			if fa_font then imgui.PopFont() end
 				data.currentMainSettingsTab = 5
 				imgui.Text('Чекер сотрудников:')
-				imgui.PushStyleColor(imgui.Col.CheckMark, itemColorActive)
+				setupCheckboxStyle()
 				if imgui.Checkbox('Включить чекер', settings.checker.enabled) then
 					if settings.checker.enabled[0] then
 						windows.checker[0] = true
@@ -7144,7 +10120,7 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 					end
 					saveConfig()
 				end
-				imgui.PopStyleColor()
+				cleanupCheckboxStyle()
 				imgui.SameLine()
 				imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.5, 0.8, 1))
 				imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.6, 0.9, 1))
@@ -7161,6 +10137,7 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 						chatMessage(u8:decode('[News Helper] Сначала включите чекер'), 0xFF0000)
 					end
 				end
+				if fa_font then imgui.PopFont() end
 				imgui.PopStyleVar()
 				imgui.PopStyleColor(3)
 				if imgui.IsItemHovered() then
@@ -7169,26 +10146,25 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 				imgui.Spacing()
 				imgui.Text('Интервал обновления (сек):')
 				imgui.PushItemWidth(200)
-				imgui.PushStyleColor(imgui.Col.SliderGrab, itemColor)
-				imgui.PushStyleColor(imgui.Col.SliderGrabActive, itemColorActive)
+				setupSliderStyle()
 				if imgui.SliderInt('##CheckerInterval', settings.checker.interval, 3, 30) then
 					membersCheckerUpdateInterval = settings.checker.interval[0] * 1000
 					saveConfig()
 				end
-				imgui.PopStyleColor(2)
+				cleanupSliderStyle()
 				imgui.PopItemWidth()
-				imgui.Text('Цвет заголовка:'); imgui.SameLine(150)
+				imgui.Text('Цвет заголовка:')
+				imgui.SameLine(150)
 				if imgui.ColorEdit4('##CheckerColor', settings.checker.textColor, imgui.ColorEditFlags.NoInputs) then
 					saveConfig()
 				end
 				imgui.Text('Размер шрифта:')
 				imgui.PushItemWidth(200)
-				imgui.PushStyleColor(imgui.Col.SliderGrab, itemColor)
-				imgui.PushStyleColor(imgui.Col.SliderGrabActive, itemColorActive)
+				setupSliderStyle()
 				if imgui.SliderInt('##CheckerFontSize', settings.checker.fontSize, 10, 30) then
 					saveConfig()
 				end
-				imgui.PopStyleColor(2)
+				cleanupSliderStyle()
 				imgui.PopItemWidth()
 				imgui.EndTabItem()
 			end
@@ -7370,8 +10346,8 @@ imgui.OnFrame(function() return windows.mainSettings[0] end, function()
 			end
 			imgui.PopItemWidth()
 			imgui.EndTabBar()
-			imgui.EndTabBar()
 			imgui.PopStyleColor(3)
+			renderBinderEditPopup()
 			imgui.End()
 		end
 	end
@@ -7400,9 +10376,7 @@ imgui.OnFrame(function() return windows.customAd[0] end, function()
 	if settings.customAd.isPreview then
 		windowFlags = imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoScrollbar + settings.topMostFlags + imgui.WindowFlags.NoTitleBar
 	else
-		windowFlags = imgui.WindowFlags.NoResize + imgui.WindowFlags.NoMove +
-					  imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoScrollbar +
-					  imgui.WindowFlags.NoTitleBar + settings.topMostFlags
+		windowFlags = imgui.WindowFlags.NoResize + imgui.WindowFlags.NoMove + imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoTitleBar + settings.topMostFlags
 	end
 	imgui.Begin('##CustomAd', nil, windowFlags)
 	if settings.customAd.isPreview then
@@ -7443,21 +10417,36 @@ imgui.OnFrame(function() return windows.customAd[0] end, function()
 		imgui.PopTextWrapPos()
 		imgui.EndTooltip()
 	end
-	imgui.Separator(); imgui.Spacing()
-	imgui.Text('Автор: ' .. (settings.customAd.data.author or 'N/A'))
+	imgui.Separator()
+	imgui.Spacing()
+	local textColor = imgui.ImVec4(
+		settings.themes.list.custom.colors.Text[1],
+		settings.themes.list.custom.colors.Text[2],
+		settings.themes.list.custom.colors.Text[3],
+		settings.themes.list.custom.colors.Text[4]
+	)
+	local _, myId = sampGetPlayerIdByCharHandle(PLAYER_PED)
+	local myNick = myId and sampGetPlayerNickname(myId) or ""
+	myNick = myNick:gsub("%[PC%]", ""):gsub("%[M%]", "")
+	local authorNick = (settings.customAd.data.author or ""):gsub("%[PC%]", ""):gsub("%[M%]", "")
+	local authorText = 'Автор: ' .. (settings.customAd.data.author or 'N/A')
+	if authorNick == myNick then
+		authorText = authorText .. '[' .. tostring(myId) .. ']'
+	elseif settings.customAd.data.isAuthorOnline and settings.customAd.data.authorId then
+		authorText = authorText .. '[' .. tostring(settings.customAd.data.authorId) .. ']'
+	else
+		authorText = authorText .. '[не в сети]'
+	end
+	imgui.TextColored(textColor, authorText)
 	imgui.Text('Номер телефона: ' .. (settings.customAd.data.phone or 'N/A'))
 	imgui.Text('Объявление: ' .. (settings.customAd.data.advertisement or 'N/A'))
 	imgui.Spacing()
 	imgui.Text('Введите ответ:')
 	imgui.PushItemWidth(imgui.GetWindowWidth() - 20)
 	local inputFlags = imgui.InputTextFlags.EnterReturnsTrue
-	local bg = settings.colors.background
 	local inputBgColor = imgui.ImVec4(bg[0] * 0.5, bg[1] * 0.5, bg[2] * 0.5, 1)
 	local inputBgColorHovered = imgui.ImVec4(bg[0] * 0.7, bg[1] * 0.7, bg[2] * 0.7, 1)
 	local inputBgColorActive = imgui.ImVec4(bg[0] * 0.9, bg[1] * 0.9, bg[2] * 0.9, 1)
-	imgui.PushStyleColor(imgui.Col.FrameBg, inputBgColor)
-	imgui.PushStyleColor(imgui.Col.FrameBgHovered, inputBgColorHovered)
-	imgui.PushStyleColor(imgui.Col.FrameBgActive, inputBgColorActive)
 	if flags.inputRecreateFrame > 0 then
 		if flags.inputRecreateFrame == 2 then
 			if flags.pendingBufferInsert then
@@ -7500,15 +10489,14 @@ imgui.OnFrame(function() return windows.customAd[0] end, function()
 		imgui.SetKeyboardFocusHere(-1)
 		flags.focusResponse = false
 	end
-	imgui.PopStyleColor(3)
 	imgui.PopItemWidth()
 	imgui.Spacing()
 	if flags.focusResponse then
 		imgui.SetKeyboardFocusHere(-1)
 		flags.focusResponse = false
 	end
-	local buttonCount = flags.autoBufferEnabled[0] and 3 or 4
-	local buttonWidth = (imgui.GetWindowWidth() - 20 - (buttonCount - 1) * 5) / buttonCount
+	local topButtonCount = flags.autoBufferEnabled[0] and 3 or 4
+	local topButtonWidth = (imgui.GetWindowWidth() - 20 - (topButtonCount - 1) * 5) / topButtonCount
 	local item = settings.colors.itemButtons
 	if buttonsDisabled then imgui.PushStyleVarFloat(imgui.StyleVar.Alpha, 0.5) end
 	if not flags.autoBufferEnabled[0] then
@@ -7516,7 +10504,7 @@ imgui.OnFrame(function() return windows.customAd[0] end, function()
 		imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
 		imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
 		if fa_font then imgui.PushFont(fa_font) end
-		if imgui.Button(fa('copy') .. ' В буфер', imgui.ImVec2(buttonWidth, 30)) then
+		if imgui.Button(fa('copy') .. ' В буфер', imgui.ImVec2(topButtonWidth, 25)) then
 			if fa_font then imgui.PopFont() end
 			if not buttonsDisabled then
 				local response = ffi.string(settings.customAd.responseText)
@@ -7528,15 +10516,16 @@ imgui.OnFrame(function() return windows.customAd[0] end, function()
 				end
 			end
 		end
-		imgui.PopStyleColor(3); imgui.SameLine()
+		imgui.PopStyleColor(3)
+		imgui.SameLine()
 	end
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
 	if fa_font then imgui.PushFont(fa_font) end
-	if imgui.Button(fa('wand_magic_sparkles') .. ' Быстрая вставка', imgui.ImVec2(buttonWidth, 30)) then
+	if imgui.Button(fa('wand_magic_sparkles') .. ' Быстрая вставка', imgui.ImVec2(topButtonWidth, 25)) then
 		if fa_font then imgui.PopFont() end
-		if settings.customAd.originalText then 
+		if settings.customAd.originalText then
 			ffi.fill(settings.customAd.responseText, ffi.sizeof(settings.customAd.responseText))
 			local len = math.min(#settings.customAd.originalText, ffi.sizeof(settings.customAd.responseText)-1)
 			ffi.copy(settings.customAd.responseText, settings.customAd.originalText, len)
@@ -7547,6 +10536,7 @@ imgui.OnFrame(function() return windows.customAd[0] end, function()
 		end
 	end
 	if imgui.IsItemClicked(1) then
+		if fa_font then imgui.PopFont() end
 		local currentText = ffi.string(settings.customAd.responseText)
 		local prefix = getWavePrefixFromBinds()
 		if not currentText:match("^%[.-%]") then
@@ -7559,6 +10549,7 @@ imgui.OnFrame(function() return windows.customAd[0] end, function()
 		else
 			chatMessage(u8:decode('[News Helper] Префикс уже есть в начале текста'), 0xFFFF00)
 		end
+		if fa_font then imgui.PushFont(fa_font) end
 	end
 	if imgui.IsItemHovered() then
 		imgui.BeginTooltip()
@@ -7576,16 +10567,76 @@ imgui.OnFrame(function() return windows.customAd[0] end, function()
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
 	if fa_font then imgui.PushFont(fa_font) end
-	if imgui.Button(fa('paper_plane') .. ' Отправить', imgui.ImVec2(buttonWidth, 30)) then
+	if imgui.Button(fa('file_contract') .. ' Цена', imgui.ImVec2(topButtonWidth, 25)) then
 		if fa_font then imgui.PopFont() end
-		if not buttonsDisabled then doSendResponse() end
+		local currentText = ffi.string(settings.customAd.responseText)
+		local newText
+		if currentText:find("свободный") then
+			newText = currentText:gsub("свободный", "договор")
+		else
+			newText = currentText .. "договор"
+		end
+		ffi.fill(settings.customAd.responseText, ffi.sizeof(settings.customAd.responseText))
+		local len = math.min(#newText, ffi.sizeof(settings.customAd.responseText) - 1)
+		ffi.copy(settings.customAd.responseText, newText, len)
+		flags.inputRecreateFrame = 2
 	end
-	imgui.PopStyleColor(3); imgui.SameLine()
+	if imgui.IsItemClicked(1) then
+		if fa_font then imgui.PopFont() end
+		local currentText = ffi.string(settings.customAd.responseText)
+		local newText
+		if currentText:find("договор") then
+			newText = currentText:gsub("договор", "свободный")
+		else
+			newText = currentText .. "свободный"
+		end
+		ffi.fill(settings.customAd.responseText, ffi.sizeof(settings.customAd.responseText))
+		local len = math.min(#newText, ffi.sizeof(settings.customAd.responseText) - 1)
+		ffi.copy(settings.customAd.responseText, newText, len)
+		flags.inputRecreateFrame = 2
+		if fa_font then imgui.PushFont(fa_font) end
+	end
+	if imgui.IsItemHovered() then
+		imgui.BeginTooltip()
+		imgui.TextColored(imgui.ImVec4(0.3, 1, 0.3, 1), 'ЛКМ:')
+		imgui.SameLine()
+		imgui.Text('Добавить слово "договор"')
+		imgui.TextColored(imgui.ImVec4(1, 0.5, 0.3, 1), 'ПКМ:')
+		imgui.SameLine()
+		imgui.Text('Добавить слово "свободный"')
+		imgui.EndTooltip()
+	end
+	imgui.PopStyleColor(3)
+	imgui.SameLine()
 	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
 	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
 	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
 	if fa_font then imgui.PushFont(fa_font) end
-	if imgui.Button(fa('circle_xmark') .. ' Закрыть', imgui.ImVec2(buttonWidth, 30)) then
+	if imgui.Button(fa('trash_can') .. ' Удалить', imgui.ImVec2(topButtonWidth, 25)) then
+		if fa_font then imgui.PopFont() end
+		if not buttonsDisabled then
+			local reason = ffi.string(settings.customAd.responseText)
+			if reason ~= '' and not reason:match("^%s*$") then
+				settings.customAd.deleteMode = true
+				settings.customAd.deleteReason = reason
+				closeCustomAd(false)
+				sampSendDialogResponse(698, 0, 0, "")
+			else
+				chatMessage(u8:decode('[News Helper] Введите причину удаления!'), 0xFF0000)
+			end
+		end
+	end
+	if fa_font then imgui.PopFont() end
+	imgui.PopStyleColor(3)
+	if buttonsDisabled then imgui.PopStyleVar() end
+	imgui.Spacing()
+	imgui.Separator()
+	local bigButtonWidth = (imgui.GetWindowWidth() - 20 - 5) / 2
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+	if fa_font then imgui.PushFont(fa_font) end
+	if imgui.Button(fa('circle_xmark') .. ' Закрыть', imgui.ImVec2(bigButtonWidth, 35)) then
 		if fa_font then imgui.PopFont() end
 		if not buttonsDisabled then
 			closeCustomAd(false)
@@ -7593,216 +10644,104 @@ imgui.OnFrame(function() return windows.customAd[0] end, function()
 		end
 	end
 	imgui.PopStyleColor(3)
-	if buttonsDisabled then imgui.PopStyleVar() end
+	imgui.SameLine()
+	imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(item[0], item[1], item[2], 1))
+	imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(item[0]*1.2, item[1]*1.2, item[2]*1.2, 1))
+	imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(item[0]*1.4, item[1]*1.4, item[2]*1.4, 1))
+	if fa_font then imgui.PushFont(fa_font) end
+	if imgui.Button(fa('paper_plane') .. ' Отправить', imgui.ImVec2(bigButtonWidth, 35)) then
+		if fa_font then imgui.PopFont() end
+		if not buttonsDisabled then doSendResponse() end
+	end
+	imgui.PopStyleColor(3)
 	imgui.End()
 	imgui.PopStyleColor()
 end).Priority = settings.renderPriority + 110
-imgui.OnFrame(function() 
-	return settings.checker.enabled[0] and windows.checker[0] 
-end, function(arg)
-	arg.HideCursor = true
+imgui.OnFrame(function()
+	return settings.checker.enabled[0] and windows.checker[0]
+end,function(arg)
+	arg.HideCursor=not settings.checker.positioning
 	if settings.checker.positioning then
-		arg.HideCursor = false
-		local mx, my = getCursorPos()
-		settings.checker.pos.x = mx
-		settings.checker.pos.y = my
+		local mx,my=getCursorPos()
+		settings.checker.pos.x,settings.checker.pos.y=mx,my
 	end
-	imgui.SetNextWindowPos(imgui.ImVec2(settings.checker.pos.x, settings.checker.pos.y), imgui.Cond.Always)
-	local windowFlags = imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + 
-						imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoCollapse +
-						imgui.WindowFlags.AlwaysAutoResize +
-						settings.topMostFlags
+	imgui.SetNextWindowPos(imgui.ImVec2(settings.checker.pos.x,settings.checker.pos.y),imgui.Cond.Always)
+	local windowFlags=imgui.WindowFlags.NoTitleBar+imgui.WindowFlags.NoResize+imgui.WindowFlags.NoScrollbar+imgui.WindowFlags.NoCollapse+imgui.WindowFlags.AlwaysAutoResize+settings.topMostFlags
+	if settings.checker.positioning then windowFlags=windowFlags+imgui.WindowFlags.NoInputs end
+	imgui.PushStyleColor(imgui.Col.WindowBg,imgui.ImVec4(0,0,0,0))
+	imgui.Begin('##MembersChecker',nil,windowFlags)
+	local textFont=getCheckerFont(settings.checker.fontSize[0])
+	if textFont then imgui.PushFont(textFont) end
+	local headerColor=imgui.ImVec4(settings.checker.textColor[0],settings.checker.textColor[1],settings.checker.textColor[2],settings.checker.textColor[3])
 	if settings.checker.positioning then
-		windowFlags = windowFlags + imgui.WindowFlags.NoInputs
-	end
-	imgui.PushStyleColor(imgui.Col.WindowBg, imgui.ImVec4(0, 0, 0, 0))
-	imgui.Begin('##MembersChecker', nil, windowFlags)
-	imgui.SetWindowFontScale(settings.checker.fontSize[0] / 10.0)
-	if settings.checker.positioning then
-		imgui.TextColored(imgui.ImVec4(1, 1, 0, 1), 'Нажмите ЛКМ чтобы закрепить')
+		imgui.TextColored(imgui.ImVec4(1,1,0,1),'Нажмите ЛКМ чтобы закрепить')
 		if isKeyJustPressed(vk.VK_LBUTTON) then
-			settings.checker.positioning = false
-			settings.checker.firstSetup = false
+			settings.checker.positioning=false
+			settings.checker.firstSetup=false
 			saveConfig()
-			chatMessage("[News Helper] Позиция чекера сохранена", 0x00FF00)
+			chatMessage(u8:decode("[News Helper] Позиция чекера сохранена"),0x00FF00)
 		end
 	end
-	local headerColor = imgui.ImVec4(
-		settings.checker.textColor[0],
-		settings.checker.textColor[1],
-		settings.checker.textColor[2],
-		settings.checker.textColor[3]
-	)
-	imgui.TextColored(headerColor, 'Сотрудники в сети:')
-	if settings.checker.waiting and #data.membersList == 0 then
-		imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Загрузка...')
-	elseif #data.membersList == 0 then
-		imgui.TextColored(imgui.ImVec4(0.7, 0.7, 0.7, 1), 'Никого нет в сети')
+	imgui.TextColored(headerColor,'Сотрудники в сети:')
+	if settings.checker.waiting and #data.membersList==0 then
+		imgui.TextColored(imgui.ImVec4(0.7,0.7,0.7,1),'Загрузка...')
+	elseif #data.membersList==0 then
+		imgui.TextColored(imgui.ImVec4(0.7,0.7,0.7,1),'Никого нет в сети')
 	else
-		local onlineCount = 0
-		local noUniformCount = 0
-		local muteCount = 0
-		local afkCount = 0
-		for _, m in ipairs(data.membersList) do
+		local onlineCount,noUniformCount,muteCount,afkCount=0,0,0,0
+		for _,m in ipairs(data.membersList) do
 			if m.online then
-				onlineCount = onlineCount + 1
-				if m.noUniform then noUniformCount = noUniformCount + 1 end
-				if m.mute then muteCount = muteCount + 1 end
-				if m.afk then afkCount = afkCount + 1 end
-				local position = tostring(m.position or "?")
-				local name = tostring(m.name or "?")
-				local phone = tostring(m.phone or "N/A")
-				local warns = tostring(m.warns or "?")
-				local mainText = string.format("%s[%d] | %s [%d]",
-					position,
-					tonumber(m.rank) or 0,
-					name,
-					tonumber(m.id) or 0
-				)
-				local mainColor = m.noUniform and imgui.ImVec4(1, 0.27, 0.27, 1) or imgui.ImVec4(1, 1, 1, 1)
-				imgui.TextColored(mainColor, mainText)
-				imgui.SameLine(0, 0)
+				onlineCount=onlineCount+1
+				if m.noUniform then noUniformCount=noUniformCount+1 end
+				if m.mute then muteCount=muteCount+1 end
+				if m.afk then afkCount=afkCount+1 end
+				local pos=tostring(m.position or "?")
+				local name=tostring(m.name or "?")
+				local phone=tostring(m.phone or "N/A")
+				local warns=tostring(m.warns or "?")
+				local mainText=string.format("%s[%d] | %s [%d]",pos,tonumber(m.rank) or 0,name,tonumber(m.id) or 0)
+				local mainColor=m.noUniform and imgui.ImVec4(1,0.27,0.27,1) or imgui.ImVec4(1,1,1,1)
+				imgui.TextColored(mainColor,mainText)
+				imgui.SameLine(0,3)
 				if m.platform then
-					imgui.Text(string.format(" [%s]", tostring(m.platform)))
-					imgui.SameLine(0, 0)
+					imgui.TextColored(mainColor,string.format("[%s]",tostring(m.platform)))
+					imgui.SameLine(0,3)
 				end
-				imgui.Text(string.format(" | %s | %s", phone, warns))
-				imgui.SameLine(0, 0)
+				imgui.TextColored(mainColor,string.format("| %s | %s",phone,warns))
+				imgui.SameLine(0,3)
 				if m.afk then
-					local afkText = string.format(" | AFK: %s", tostring(m.afk))
-					imgui.TextColored(imgui.ImVec4(1, 1, 0, 1), afkText)
-					imgui.SameLine(0, 0)
+					imgui.TextColored(imgui.ImVec4(1,1,0,1),string.format("| AFK: %s",tostring(m.afk)))
+					imgui.SameLine(0,3)
 				end
 				if m.mute then
-					local muteText = string.format(" | В муте (%s)", tostring(m.mute))
-					imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), muteText)
-					imgui.SameLine(0, 0)
+					imgui.TextColored(imgui.ImVec4(1,0,0,1),string.format("| В муте (%s)",tostring(m.mute)))
+					imgui.SameLine(0,3)
 				end
-				if m.noUniform then
-					imgui.TextColored(imgui.ImVec4(1, 0.27, 0.27, 1), " | БЕЗ ФОРМЫ")
-				else
-					imgui.Text("")
-				end
+				if m.noUniform then imgui.TextColored(imgui.ImVec4(1,0.27,0.27,1),"| БЕЗ ФОРМЫ") else imgui.Text("") end
 			end
 		end
 		imgui.Spacing()
-		local totalPlayers = #data.membersList
-		imgui.TextColored(imgui.ImVec4(0, 1, 0, 1), 'Всего: ')
-		imgui.SameLine(0, 0)
-		imgui.TextColored(imgui.ImVec4(0, 1, 0, 1), tostring(totalPlayers))
-		imgui.SameLine(0, 0)
-		imgui.TextColored(imgui.ImVec4(1, 1, 0, 1), ' | В АФК: ')
-		imgui.SameLine(0, 0)
-		imgui.TextColored(imgui.ImVec4(1, 1, 0, 1), tostring(afkCount))
-		imgui.SameLine(0, 0)
-		imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), ' | В муте: ')
-		imgui.SameLine(0, 0)
-		imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), tostring(muteCount))
+		local total=#data.membersList
+		imgui.TextColored(imgui.ImVec4(0,1,0,1),'Всего: ')
+		imgui.SameLine(0,0)
+		imgui.TextColored(imgui.ImVec4(0,1,0,1),tostring(total))
+		imgui.SameLine(0,3)
+		imgui.TextColored(imgui.ImVec4(1,1,0,1),'| В АФК: ')
+		imgui.SameLine(0,0)
+		imgui.TextColored(imgui.ImVec4(1,1,0,1),tostring(afkCount))
+		imgui.SameLine(0,3)
+		imgui.TextColored(imgui.ImVec4(1,0,0,1),'| В муте: ')
+		imgui.SameLine(0,0)
+		imgui.TextColored(imgui.ImVec4(1,0,0,1),tostring(muteCount))
 	end
+	if textFont then imgui.PopFont() end
 	imgui.End()
 	imgui.PopStyleColor()
-end).Priority = settings.renderPriority + 300
+end).Priority=settings.renderPriority + 300
 function shouldBlockInput()
 	return windows.editor[0] or windows.colorSettings[0] or 
 		windows.editCategory[0] or windows.editBind[0] or windows.contextMenu[0] or 
 		windows.pro[0] or windows.mainSettings[0]
-end
-function compareVersions(localVer, remoteVer)
-	local function split(ver)
-		local t = {}
-		for num in string.gmatch(ver, "[0-9]+") do
-			table.insert(t, tonumber(num))
-		end
-		return t
-	end
-	local l, r = split(localVer), split(remoteVer)
-	for i = 1, math.max(#l, #r) do
-		local lv, rv = l[i] or 0, r[i] or 0
-		if lv < rv then return true end
-		if lv > rv then return false end
-	end
-	return false
-end
-function checkForUpdates(manual)
-	lua_thread.create(function()
-		if manual then
-			sampAddChatMessage(u8:decode("[News Helper] Проверяем обновления..."), 0xFFFF00)
-		end
-		local ok, response = pcall(function()
-			return requests.get(
-				"https://api.github.com/repos/alikhandwawd/newstools/releases/latest",
-				{ timeout = 10, headers = { ["User-Agent"] = "MoonLoader" } }
-			)
-		end)
-		if not ok or not response or not response.text then
-			if manual then
-				sampAddChatMessage(u8:decode("[News Helper] Ошибка соединения."), 0xFF0000)
-			end
-			return
-		end
-		local okJson, data = pcall(function() return decodeJson(response.text) end)
-		if not okJson or not data or not data.tag_name then
-			if manual then
-				sampAddChatMessage(u8:decode("[News Helper] Некорректный ответ от GitHub."), 0xFF0000)
-			end
-			return
-		end
-		local server_version = tostring(data.tag_name or "")
-		if server_version ~= "" and compareVersions(script_version, server_version) then
-			update_available = true
-			new_version = server_version
-			sampAddChatMessage(u8:decode(string.format("[News Helper] Доступно обновление до %s!", server_version)), 0x00FF00)
-			sampAddChatMessage(u8:decode("[News Helper] Используйте /newsinstall для установки."), 0xFFFF00)
-		else
-			if manual then
-				sampAddChatMessage(u8:decode("[News Helper] У вас последняя версия."), 0x00FF00)
-			end
-		end
-	end)
-end
-function installUpdate()
-	lua_thread.create(function()
-		if not update_available or not new_version then
-			sampAddChatMessage(u8:decode("[News Helper] Нет доступных обновлений."), 0xFF0000)
-			return
-		end
-		flags.updaterBusy = true
-		sampAddChatMessage(u8:decode("[News Helper] Скачиваем обновление (.lua)..."), 0xFFFF00)
-		local api_url = "https://api.github.com/repos/alikhandwawd/newstools/releases/latest"
-		local res = requests.get(api_url, { timeout = 10, headers = { ["User-Agent"] = "Mozilla/5.0" } })
-		if not res or res.status_code ~= 200 or not res.text then
-			sampAddChatMessage(u8:decode("[News Helper] Ошибка получения релиза."), 0xFF0000)
-			flags.updaterBusy = false
-			return
-		end
-		local data = decodeJson(res.text)
-		if not data or not data.assets or #data.assets == 0 then
-			sampAddChatMessage(u8:decode("[News Helper] В релизе нет файлов."), 0xFF0000)
-			flags.updaterBusy = false
-			return
-		end
-		local download_url
-		for _, asset in ipairs(data.assets) do
-			if asset.name == "newstools.lua" then
-				download_url = asset.browser_download_url
-				break
-			end
-		end
-		if not download_url then
-			sampAddChatMessage(u8:decode("[News Helper] В релизе нет файла newstools.lua"), 0xFF0000)
-			flags.updaterBusy = false
-			return
-		end
-		local ok, err = downloadUrlToFile(download_url, thisScript().path)
-		if ok then
-			sampAddChatMessage(u8:decode(string.format("[News Helper] Обновление до %s установлено!", new_version)), 0x00FF00)
-			wait(2000)
-			thisScript():reload()
-		else
-			sampAddChatMessage(u8:decode("[News Helper] Ошибка скачивания файла: " .. tostring(err)), 0xFF0000)
-		end
-		flags.updaterBusy = false
-	end)
 end
 function loadBufferFromFile()
 	local file = io.open(settings.bufferFilePath, 'r')
@@ -7811,9 +10750,6 @@ function loadBufferFromFile()
 	end
 	local content = file:read('*a')
 	file:close()
-	if not content or content == "" then
-		return {}
-	end
 	local data = decodeJson(content)
 	return data or {}
 end
@@ -7843,14 +10779,13 @@ function clearBuffer()
 end
 function saveBufferToFile(bufferData)
 	local filePath = settings.configFolder .. 'NewsBuffer.json'
-	local file = io.open(filePath, 'w+b')
+	local file = io.open(filePath, 'w')
 	if file then
-		local jsonText = encodeJson(bufferData)
-		file:write(jsonText) 
+		file:write(encodeJson(bufferData))
 		file:close()
 		return true
 	else
-		chatMessage(u8:decode('[News Helper] Ошибка сохранения буфера в ' .. filePath), 0xFF0000)
+		chatMessage(u8:decode('[News Helper] Ошибка сохранения буфера'), 0xFF0000)
 		return false
 	end
 end
@@ -7877,10 +10812,8 @@ function updateBufferCategory(bufferData)
 	end
 	for idx, entry in ipairs(bufferData) do
 		local bindData = {
-			entry.displayName or "",
-			entry.editedText or "",
-			entry.author or "",
-			tostring(idx)
+			entry.advertisement or "",
+			entry.editedText or ""
 		}
 		table.insert(data.newsHelpBind[bufferCategoryIndex], bindData)
 	end
@@ -7992,26 +10925,8 @@ lua_thread.create(function()
 				proTriggered = false
 			end
 		end
-		if ui.hotkeys.edit and #ui.hotkeys.edit > 0 then
-			local allPressed = true
-			for _, key in ipairs(ui.hotkeys.edit) do
-				if not isKeyPressed(key) then
-					allPressed = false
-					break
-				end
-			end
-			if allPressed and not editTriggered then
-				editTriggered = true
-				if not sampIsChatInputActive() and not sampIsDialogActive() and 
-					not windows.customAd[0] then
-					sampSendChat("/edit")
-				end
-			elseif not allPressed then
-				editTriggered = false
-			end
-		end
-		if efir.control.pauseHotkey and #efir.control.pauseHotkey > 0 and efir.control.running then
-			if not sampIsChatInputActive() and not sampIsDialogActive() and not sampIsCursorActive() then
+		if efir.control.pauseHotkey and #efir.control.pauseHotkey > 0 then
+			if not sampIsChatInputActive() and not sampIsDialogActive() then
 				local allPressed = true
 				for _, key in ipairs(efir.control.pauseHotkey) do
 					if not isKeyPressed(key) then
@@ -8021,11 +10936,23 @@ lua_thread.create(function()
 				end
 				if allPressed and not pauseTriggered then
 					pauseTriggered = true
-					efir.control.paused = not efir.control.paused
-					if efir.control.paused then
-						chatMessage(u8:decode('[News Helper] Эфир на паузе'), 0xFFFF00)
-					else
-						chatMessage(u8:decode('[News Helper] Эфир возобновлен'), 0x00FF00)
+					if efir.auto.finishedQuestions then
+						resumeAutoEfirAfterEnd()
+					elseif efir.auto.pausedDuringQuestions then
+						resumeAutoEfirDuringQuestions()
+					elseif efir.auto.pausedDuringStartup then
+						resumeAutoEfirDuringStartup()
+					elseif efir.auto.active and efir.auto.waitingForAnswer then
+						pauseAutoEfirDuringQuestions()
+					elseif efir.auto.active then
+						pauseAutoEfirDuringStartup()
+					elseif efir.control.running then
+						efir.control.paused = not efir.control.paused
+						if efir.control.paused then
+							chatMessage(u8:decode('[News Helper] Эфир на паузе'), 0xFFFF00)
+						else
+							chatMessage(u8:decode('[News Helper] Эфир возобновлен'), 0x00FF00)
+						end
 					end
 				elseif not allPressed then
 					pauseTriggered = false
@@ -8059,7 +10986,7 @@ lua_thread.create(function()
 end)
 function sendMembersRequest()
 	if not sampIsLocalPlayerSpawned() then return false end
-	if sampIsChatInputActive() or sampIsDialogActive() or sampIsCursorActive() then return false end
+	if sampIsChatInputActive() or sampIsDialogActive() then return false end
 	sampSendChat("/members")
 	settings.checker.waiting = true
 	settings.checker.requestTime = os.clock()
@@ -8093,15 +11020,13 @@ function main()
 	while not isSampAvailable() do wait(100) end
 	imgui.Process = true
 	wait(0)
-	chatIdPlayers = getChatIdAllPlayers()
+	chat.idPlayers = getChatIdAllPlayers()
 	local _, myId = sampGetPlayerIdByCharHandle(PLAYER_PED)
 	if myId then
 		local myNick = sampGetPlayerNickname(myId)
 		if myNick then
 			myNick = myNick:gsub("%[PC%]", ""):gsub("%[M%]", "")
 			isDevMode = (myNick == "Hayato_Mellson")
-			if isDevMode then
-			end
 		end
 	end
 	if not doesDirectoryExist(getWorkingDirectory() .. '\\config') then
@@ -8134,34 +11059,30 @@ function main()
 		end
 	end
 	InitCustomAdCallback()
-	loadConfig()
-	if settings.checker.enabled[0] then
-		windows.checker[0] = true
+	initUserVariables()
+	for i = 1, 10 do
+		efir.examples.math[i] = imgui.new.char[256]()
+		efir.answers.math[i] = imgui.new.char[256]()
+		efir.examples.country[i] = imgui.new.char[256]()
+		efir.answers.country[i] = imgui.new.char[256]()
+		efir.examples.himia[i] = imgui.new.char[256]()
+		efir.answers.himia[i] = imgui.new.char[256]()
+		efir.examples.zerkalo[i] = imgui.new.char[256]()
+		efir.answers.zerkalo[i] = imgui.new.char[256]()
+		efir.examples.annagramm[i] = imgui.new.char[256]()
+		efir.answers.annagramm[i] = imgui.new.char[256]()
+		efir.examples.zagadki[i] = imgui.new.char[256]()
+		efir.answers.zagadki[i] = imgui.new.char[256]()
+		efir.examples.sinonim[i] = imgui.new.char[256]()
+		efir.answers.sinonim[i] = imgui.new.char[256]()
 	end
+	cleanUpdateFiles()
+	loadConfig()
+	loadRSSettings()
+	loadBinder()
 	checkAllDocVersions()
 	loadAllDocuments()
 	checkForUpdates()
-	initUserVariables()
-	if data.mainIni and data.mainIni.config then
-		if user.nick and data.mainIni.config.c_nick ~= "" then 
-			ffi.copy(user.nick, data.mainIni.config.c_nick) 
-		end
-		if user.rang and data.mainIni.config.c_rang_b ~= "" then 
-			ffi.copy(user.rang, data.mainIni.config.c_rang_b) 
-		end
-		if user.org and data.mainIni.config.c_cnn ~= "" then 
-			ffi.copy(user.org, data.mainIni.config.c_cnn) 
-		end
-		if user.city and data.mainIni.config.c_city_n ~= "" then 
-			ffi.copy(user.city, data.mainIni.config.c_city_n) 
-		end
-		if user.gender then 
-			user.gender[0] = data.mainIni.config.c_pol 
-		end
-		if user.waveTag and data.mainIni.config.wave_tag ~= "" then 
-			ffi.copy(user.waveTag, data.mainIni.config.wave_tag) 
-		end
-	end
 	safeAutoDetect()
 	loadHelpBinds()
 	if not loadEfirMessages() then
@@ -8186,10 +11107,25 @@ function main()
 		reloadEfirMessages()
 		chatMessage(u8:decode('[News Helper] Сообщения эфиров перезагружены!'), 0x00FF00)
 	end)
+	sampRegisterChatCommand('newsrs',function()
+		if data.myRankNumber>=9 or isDevMode then
+			windows.rsWindow[0]=not windows.rsWindow[0]
+			loadRSSettings()
+		else
+			chatMessage(u8:decode('[News Helper] Эта команда доступна с 9-го ранга!'),0xFF0000)
+		end
+	end)
+	sampRegisterChatCommand('reloadbinds', function()
+		loadHelpBinds()
+		loadBufferOnStart()
+		ensureBufferCategory()
+		moveBufferCategoryToEnd()
+		chatMessage(u8:decode('[News Helper] Бинды перезагружены!'), 0x00FF00)
+	end)
 	sampRegisterChatCommand('newshelp', function()
-	if not windows.mainSettings[0] then
-		windows.help[0] = not windows.help[0]
-	end
+		if not windows.mainSettings[0] then
+			windows.help[0] = not windows.help[0]
+		end
 		if windows.help[0] then
 			ui.search.id = ui.search.id + 1
 			ui.search.input = imgui.new.char[128]()
@@ -8272,6 +11208,8 @@ function main()
 			chatMessage(u8:decode('[News Helper] В эфире нет строк!'), 0xFF0000)
 			return
 		end
+		efir.auto.finishedQuestions = false
+		efir.auto.pausedManually = false
 		if efir.control.running then
 			if efir.control.thread then
 				efir.control.thread:terminate()
@@ -8334,17 +11272,14 @@ function main()
 			end
 		end
 	end)
-	sampRegisterChatCommand('newstools', function() 
-		windows.mainSettings[0] = not windows.mainSettings[0] 
+	sampRegisterChatCommand('newstools', function()
+		if efir.auto.active and not efir.auto.paused and not efir.auto.pausedDuringQuestions and not efir.auto.pausedDuringStartup then
+			chatMessage(u8:decode('[News Helper] Нельзя открыть настройки во время активного автоэфира!'), 0xFF0000)
+			return
+		end
+		windows.mainSettings[0] = not windows.mainSettings[0]
 	end)
-	sampRegisterChatCommand('newseditor', function() windows.editor[0] = not windows.editor[0] end)
-	sampRegisterChatCommand('reloadbinds', function()
-		loadHelpBinds()
-		moveBufferCategoryToEnd()
-		loadBufferOnStart()
-		ensureBufferCategory()
-		chatMessage(u8:decode('[News Helper] Бинды перезагружены!'), 0x00FF00)
-	end)
+	if fa_font then imgui.PopFont() end
 	sampRegisterChatCommand('clearbuffer', function()
 		clearBuffer()
 	end)
@@ -8371,12 +11306,13 @@ function main()
 		u8:decode('[News Helper] Скрипт загружен! Команды: /newstools, /newshelp, /newseditor'),
 		0x00FF00
 	)
-	local updateChecked = false
-	local startTime = os.clock()
 	while true do
 		wait(0)
 		imgui.Process = true
 		updateMembersList()
+		processScoreQueue()
+		processAutoEfirActionQueue()
+		checkBinderHotkeys()
 		if shouldBlockInput() then
 			if windows.customAd[0] then
 				if sampGetCursorMode() ~= 2 then
@@ -8429,17 +11365,54 @@ imgui.OnInitialize(function()
 	imgui.GetIO().IniFilename = nil
 	local glyph_ranges = imgui.GetIO().Fonts:GetGlyphRangesCyrillic()
 	local font_path = getFolderPath(0x14) .. '\\trebucbd.ttf'
-	imgui.GetIO().Fonts:AddFontFromFileTTF(font_path, 13.0, nil, glyph_ranges)
 	local config = imgui.ImFontConfig()
-	config.MergeMode = true
+	config.OversampleH = 2
+	config.OversampleV = 2
 	config.PixelSnapH = true
+	config.RasterizerMultiply = 1.2
+	imgui.GetIO().Fonts:AddFontFromFileTTF(font_path, 13.0, config, glyph_ranges)
+	local fa_config = imgui.ImFontConfig()
+	fa_config.MergeMode = true
+	fa_config.PixelSnapH = true
 	fa_glyph_ranges = imgui.new.ImWchar[3](fa.min_range, fa.max_range, 0)
-	fa_font = imgui.GetIO().Fonts:AddFontFromMemoryCompressedBase85TTF(fa.get_font_data_base85('solid'), 13.0, config, fa_glyph_ranges)
+	fa_font = imgui.GetIO().Fonts:AddFontFromMemoryCompressedBase85TTF(fa.get_font_data_base85('regular'), 13.0, fa_config, fa_glyph_ranges)
 	applyStyle()
 end)
 imgui.OnInitialize(function()
+	local io=imgui.GetIO()
+	ui.fonts.default=io.Fonts:AddFontFromFileTTF(getWorkingDirectory()..'\\arial.ttf',16.0)
+	ui.fonts.bold=io.Fonts:AddFontFromFileTTF(getWorkingDirectory()..'\\arialbd.ttf',16.0)
+	io.Fonts:Build()
+	io.FontDefault=ui.fonts.default
+end)
+imgui.OnInitialize(function()
+	local io=imgui.GetIO()
+	local fontPath=getFolderPath(0x14)..'\\arialbd.ttf'
+	local glyphRanges=io.Fonts:GetGlyphRangesCyrillic()
+	local fontConfig=imgui.ImFontConfig()
+	fontConfig.OversampleH=3
+	fontConfig.OversampleV=3
+	fontConfig.RasterizerMultiply=1.3
+	ui.fonts.default=io.Fonts:AddFontFromFileTTF(fontPath,13.0,fontConfig,glyphRanges)
+	ui.fonts.bold=ui.fonts.default
+	ui.fonts.checkerFonts={}
+	for size=8,30 do
+		local cfg=imgui.ImFontConfig()
+		cfg.OversampleH=3
+		cfg.OversampleV=3
+		cfg.RasterizerMultiply=1.3
+		ui.fonts.checkerFonts[size]=io.Fonts:AddFontFromFileTTF(fontPath,size,cfg,glyphRanges)
+	end
+	io.Fonts:Build()
+end)
+imgui.OnInitialize(function()
 	local io = imgui.GetIO()
-	ui.fonts.default = io.Fonts:AddFontFromFileTTF(getWorkingDirectory() .. '\\arial.ttf', 16.0)
-	ui.fonts.bold = io.Fonts:AddFontFromFileTTF(getWorkingDirectory() .. '\\arialbd.ttf', 16.0)
-	io.FontDefault = ui.fonts.default
+	local fontPath = getFolderPath(0x14) .. '\\arialbd.ttf'
+	local glyphRanges = io.Fonts:GetGlyphRangesCyrillic()
+	local fontConfig = imgui.ImFontConfig()
+	fontConfig.OversampleH = 3
+	fontConfig.OversampleV = 3
+	fontConfig.RasterizerMultiply = 1.3
+	ui.fonts.binderStatus = io.Fonts:AddFontFromFileTTF(fontPath, 17.0, fontConfig, glyphRanges)
+	io.Fonts:Build()
 end)
