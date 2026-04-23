@@ -4472,6 +4472,7 @@ if imgui and vk and fa and requests and encoding and ev then
 						AddNotification("[News Helper]", "Рекомендации отключены", "info", 3.0)
 					end
 				end
+				imgui.TextColored(imgui.ImVec4(1, 0.2, 0.2, 1), ('функция очень плохо работает :('))
 				cleanupCheckboxStyle()
 				imgui.Spacing()
 				if settings.suggestedButtons.enabled[0] then
