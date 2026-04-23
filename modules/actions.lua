@@ -1171,186 +1171,222 @@ function insertPrice(template, adText)
 	end
 	return template
 end
+local function utf8_chars(s)
+	local chars = {}
+	local i, len = 1, #s
+	while i <= len do
+		local b = s:byte(i)
+		local n = b < 0x80 and 1 or b < 0xE0 and 2 or b < 0xF0 and 3 or 4
+		table.insert(chars, s:sub(i, i + n - 1))
+		i = i + n
+	end
+	return chars
+end
+local function utf8_len(s)
+	local count, i, len = 0, 1, #s
+	while i <= len do
+		local b = s:byte(i)
+		i = i + (b < 0x80 and 1 or b < 0xE0 and 2 or b < 0xF0 and 3 or 4)
+		count = count + 1
+	end
+	return count
+end
+local function levenshtein(s, t)
+	local sc, tc = utf8_chars(s), utf8_chars(t)
+	local ls, lt = #sc, #tc
+	if ls == 0 then return lt end
+	if lt == 0 then return ls end
+	local prev, curr = {}, {}
+	for i = 0, lt do prev[i] = i end
+	for i = 1, ls do
+		curr[0] = i
+		for j = 1, lt do
+			curr[j] = sc[i] == tc[j] and prev[j-1] or 1 + math.min(prev[j], curr[j-1], prev[j-1])
+		end
+		prev, curr = curr, prev
+	end
+	return prev[lt]
+end
+
+local function fuzzyWordScore(keyword, adWord)
+	local lk, la = utf8_len(keyword), utf8_len(adWord)
+	if lk == 0 or la == 0 then return 0 end
+	if adWord:find(keyword, 1, true) then
+		local ratio = lk / la
+		if ratio >= 0.85 then return 100 end
+		if ratio >= 0.60 then return 90 end
+		return 80
+	end
+	if la >= 2 and keyword:find(adWord, 1, true) then
+		local ratio = la / lk
+		if ratio >= 0.70 then return 85 end
+	end
+	local maxLen = math.max(lk, la)
+	local minLen = math.min(lk, la)
+	if maxLen - minLen > maxLen * 0.55 then return 0 end
+	local dist = levenshtein(keyword, adWord)
+	local allowed = math.max(1, math.floor(maxLen * 0.30))
+	if dist > allowed then return 0 end
+	local score = math.floor((1 - dist / maxLen) * 100)
+	local kc = utf8_chars(keyword)
+	local ac = utf8_chars(adWord)
+	if #kc >= 2 and #ac >= 2 and kc[1] == ac[1] and kc[2] == ac[2] then
+		score = math.min(100, score + 8)
+	end
+	return score
+end
+
+local function detectAdType(text)
+	local buyWords  = { куплю=true, куп=true, куплюсь=true, ищу=true, buy=true }
+	local sellWords = { продам=true, прод=true, пр=true, продаю=true, продается=true, продаётся=true, sell=true, прдм=true, прдаю=true }
+	local checked = 0
+	for word in text:gmatch("%S+") do
+		local w = word:gsub("[%p%[%]%!%?]", "")
+		if buyWords[w]  then return "buy"  end
+		if sellWords[w] then return "sell" end
+		checked = checked + 1
+		if checked >= 4 then break end
+	end
+	return nil
+end
+
+local ftWords = { фт=true, ft=true, фулл=true }
+local function normalizeAdText(text)
+	local parts = {}
+	for word in text:gmatch("%S+") do
+		local clean = word:gsub("[%p%[%]%!%?\"']", ""):lower()
+		if ftWords[clean] then
+			table.insert(parts, "ft")
+		else
+			table.insert(parts, word)
+		end
+	end
+	return table.concat(parts, " ")
+end
 function searchByAdvertisement(searchText)
-	if not searchText or searchText == "" then
-		return {}
-	end
+	if not searchText or searchText == "" then return {} end
 	local searchLower = lower_utf8_optimized(searchText)
-	local searchType = nil
-	local searchWords = {}
-	for word in searchLower:gmatch("%S+") do
-		table.insert(searchWords, word)
-	end
-	if #searchWords == 0 then
-		return {}
-	end
-	local firstWord = searchWords[1]
-	if firstWord == "куплю" or firstWord == "куп" or firstWord == "купил" then
-		searchType = "buy"
-	elseif firstWord == "продам" or firstWord == "прод" or firstWord == "продаю" or firstWord == "продал" then
-		searchType = "sell"
-	end
+	local searchType  = detectAdType(searchLower)
 	local searchPrice = extractPrice(searchLower)
 	local stopWords = {
-		на = true, в = true, и = true, или = true, а = true, о = true,
-		с = true, у = true, к = true, за = true, то = true,
-		цена = true, бюджет = true, договорная = true,
-		куплю = true, куп = true, купил = true,
-		продам = true, прод = true, продаю = true, продал = true,
-		свободный = true, единиц = true, шт = true, штук = true,
-		это = true, что = true, не = true, по = true, из = true
+		на=true, в=true, и=true, или=true, а=true, о=true, со=true,
+		с=true, у=true, к=true, за=true, то=true, не=true, по=true,
+		из=true, до=true, от=true, об=true, при=true, под=true, над=true,
+		это=true, что=true, как=true, так=true, уже=true, ещё=true,
+		цена=true, бюджет=true, договорная=true, договор=true,
+		свободный=true, единиц=true, шт=true, штук=true, штуки=true,
+		количество=true, просьба=true, связаться=true,
+		неограниченном=true, ограниченном=true,
+		куплю=true, продам=true, прод=true, пр=true, прдм=true,
+		куп=true, куплюсь=true, продаю=true, sell=true, buy=true,
+		ищу=true, предлагаю=true,
 	}
 	local queryKeywords = {}
-	for _, word in ipairs(searchWords) do
-		local cleaned = word:gsub("[%p%d]", "")
-		if #cleaned >= 2 and not stopWords[cleaned] then
+	for word in searchLower:gmatch("%S+") do
+		local cleaned = word:gsub("[%p%d%[%]%!%?\"']", "")
+		local clen = utf8_len(cleaned)
+		if clen >= 2 and not stopWords[cleaned] then
 			table.insert(queryKeywords, cleaned)
 		end
 	end
-	if #queryKeywords == 0 then
-		return {}
+	if #queryKeywords == 0 then return {} end
+	local function getMatchThreshold(total)
+		if total == 1 then return 100
+		elseif total == 2 then return 50
+		elseif total <= 4 then return 50
+		else return 40 end
 	end
 	local bufferData = loadBufferFromFile()
 	local results = {}
-	for idx, entry in ipairs(bufferData) do
-		if (not entry.advertisement or entry.advertisement == "") and 
-		   (not entry.editedText or entry.editedText == "") then
-			goto skip_entry
+	for _, entry in ipairs(bufferData) do
+		local rawText    = entry.advertisement or ""
+		local editedText = entry.editedText or ""
+		if rawText == "" and editedText == "" then goto skip_entry end
+		local rawNorm     = normalizeAdText(lower_utf8_optimized(rawText))
+		local editedNorm  = normalizeAdText(lower_utf8_optimized(editedText))
+		local adType = detectAdType(rawNorm)
+		if adType == nil then adType = detectAdType(editedNorm) end
+		if searchType and adType and searchType ~= adType then goto skip_entry end
+		local rawWordSet = {}
+		local editedWordSet = {}
+		for word in rawNorm:gmatch("%S+") do
+			local w = word:gsub("[%p%[%]%!%?\"'%d]", "")
+			if utf8_len(w) >= 2 then rawWordSet[w] = true end
 		end
-		local adText = entry.editedText ~= "" and entry.editedText or entry.advertisement
-		local adLower = lower_utf8_optimized(adText)
-		local adWords = {}
-		for word in adLower:gmatch("%S+") do
-			table.insert(adWords, word)
+		for word in editedNorm:gmatch("%S+") do
+			local w = word:gsub("[%p%[%]%!%?\"'%d]", "")
+			if utf8_len(w) >= 2 then editedWordSet[w] = true end
 		end
-		local adFirstWord = nil
-		if #adWords > 0 then
-			if adWords[1]:find("^%[") and #adWords > 1 then
-				adFirstWord = adWords[2]
-			else
-				adFirstWord = adWords[1]
-			end
-		end
-		local adType = nil
-		if adFirstWord then
-			local cleanWord = adFirstWord:gsub("[%p]", "")
-			if cleanWord == "куплю" or cleanWord == "куп" or cleanWord == "купил" then
-				adType = "buy"
-			elseif cleanWord == "продам" or cleanWord == "прод" or cleanWord == "продал" or cleanWord == "продаю" then
-				adType = "sell"
-			end
-		end
-		if searchType and adType then
-			if searchType ~= adType then
-				goto skip_entry
-			end
-		end
-		local matchCount = 0
+		local matchCount   = 0
 		local exactMatches = 0
-		local bestScores = {}
+		local totalScore   = 0
 		for _, keyword in ipairs(queryKeywords) do
 			local bestScore = 0
-			local isExact = false
-			if adLower:find(keyword, 1, true) then
-				bestScore = 100
-				isExact = true
+			if rawNorm:find(keyword, 1, true) then
+				bestScore    = 100
 				exactMatches = exactMatches + 1
-				matchCount = matchCount + 1
+				matchCount   = matchCount + 1
+			elseif editedNorm:find(keyword, 1, true) then
+				bestScore    = 90
+				exactMatches = exactMatches + 1
+				matchCount   = matchCount + 1
 			else
-				local len1, len2 = #keyword, 0
-				local minSim = 70
-				for adWord in adLower:gmatch("%S+") do
-					local cleanAdWord = adWord:gsub("[%p%d]", "")
-					if #cleanAdWord >= 2 then
-						len2 = #cleanAdWord
-						if len1 == 0 then 
-							bestScore = (len2 == 0) and 100 or 0
-						elseif len2 == 0 then 
-							bestScore = 0
-						else
-							local matches = 0
-							for i = 1, math.min(len1, len2) do
-								if keyword:sub(i, i) == cleanAdWord:sub(i, i) then
-									matches = matches + 1
-								end
-							end
-							local similarity = (matches / math.max(len1, len2)) * 100
-							if keyword:sub(1, 2) == cleanAdWord:sub(1, 2) then
-								similarity = similarity + 15
-							end
-							similarity = math.min(similarity, 100)
-							if similarity > bestScore then
-								bestScore = similarity
-							end
-						end
+				for adWord in pairs(rawWordSet) do
+					local s = fuzzyWordScore(keyword, adWord)
+					if s > bestScore then bestScore = s end
+					if bestScore == 100 then break end
+				end
+				if bestScore < 80 then
+					for adWord in pairs(editedWordSet) do
+						local s = fuzzyWordScore(keyword, adWord)
+						if s > bestScore then bestScore = s end
+						if bestScore == 100 then break end
 					end
 				end
-				if bestScore >= minSim then
-					matchCount = matchCount + 1
-				end
+				if bestScore >= 65 then matchCount = matchCount + 1 end
 			end
-			table.insert(bestScores, {score = bestScore, exact = isExact})
+			totalScore = totalScore + bestScore
 		end
 		local matchPercentage = (matchCount / #queryKeywords) * 100
-		if matchPercentage < 50 then
-			goto skip_entry
-		end
-		local adPrice = extractPrice(adText)
-		local priceMatch = false
+		if matchPercentage < getMatchThreshold(#queryKeywords) then goto skip_entry end
+		local adPrice = extractPrice(rawText) or extractPrice(editedText)
+		local priceBonus, pricePenalty = 0, 0
 		if searchPrice and adPrice then
-			local searchPriceNum = tonumber((searchPrice:gsub("[%.$]", "")))
-			local adPriceNum = tonumber((adPrice:gsub("[%.$]", "")))
-			if searchPriceNum and adPriceNum then
-				local priceDiff = math.abs(searchPriceNum - adPriceNum) / math.max(searchPriceNum, adPriceNum)
-				priceMatch = priceDiff <= 0.1
+			local sNum = tonumber((searchPrice:gsub("[%.$%.]", "")))
+			local aNum = tonumber((adPrice:gsub("[%.$%.]", "")))
+			if sNum and aNum and sNum > 0 then
+				local diff = math.abs(sNum - aNum) / math.max(sNum, aNum)
+				if diff <= 0.05 then priceBonus = 40
+				elseif diff <= 0.2 then priceBonus = 20
+				elseif diff <= 0.5 then priceBonus = 5
+				else pricePenalty = 15 end
 			end
+		elseif searchPrice and not adPrice then
+			pricePenalty = 10
 		end
-		if searchPrice and not adPrice then
-			goto skip_entry
-		end
-		local relevance = 0
-		relevance = relevance + (exactMatches * 35)
-		relevance = relevance + (matchPercentage / 100) * 40
-		local avgScore = 0
-		for _, scoreData in ipairs(bestScores) do
-			avgScore = avgScore + scoreData.score
-		end
-		avgScore = avgScore / #bestScores
-		relevance = relevance + (avgScore / 100) * 20
-		if searchPrice and priceMatch then
-			relevance = relevance + 25
-		end
-		if entry.editedText ~= "" then
-			relevance = relevance + 10
-		end
-		if relevance < 25 then
-			goto skip_entry
-		end
+		local avgScore  = totalScore / #queryKeywords
+		local relevance = exactMatches * 30
+			+ (matchPercentage / 100) * 35
+			+ (avgScore / 100) * 25
+			+ priceBonus - pricePenalty
+		if editedText ~= "" and editedText ~= "+" then relevance = relevance + 5 end
+		if relevance < 20 then goto skip_entry end
+		local displayText = (editedText ~= "" and editedText ~= "+") and editedText or rawText
 		table.insert(results, {
-			text = adText,
-			advertisement = entry.advertisement,
-			author = entry.author,
-			phone = entry.phone,
-			relevance = relevance,
-			matchCount = matchCount,
-			exactMatches = exactMatches,
-			price = adPrice
+			text          = displayText,
+			advertisement = rawText,
+			author        = entry.author,
+			phone         = entry.phone,
+			relevance     = relevance,
+			matchCount    = matchCount,
+			exactMatches  = exactMatches,
+			price         = adPrice,
 		})
 		::skip_entry::
 	end
-	local searchHasPrice = searchLower:find("%d")
 	table.sort(results, function(a, b)
-		if not searchHasPrice then
-			if (a.price == nil) ~= (b.price == nil) then
-				return a.price == nil
-			end
-		end
-		if a.relevance ~= b.relevance then
-			return a.relevance > b.relevance
-		end
-		if a.exactMatches ~= b.exactMatches then
-			return a.exactMatches > b.exactMatches
-		end
+		if a.relevance ~= b.relevance then return a.relevance > b.relevance end
+		if a.exactMatches ~= b.exactMatches then return a.exactMatches > b.exactMatches end
 		return a.matchCount > b.matchCount
 	end)
 	local topResults = {}
