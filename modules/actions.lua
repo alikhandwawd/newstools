@@ -62,6 +62,9 @@ function publishAdvertisement()
 		if windows.help[0] and ui.search then
 			flags.saveHelpScroll = true
 		end
+		if not response:match("[%.%!%?]%s*$") then
+			response = response .. "."
+		end
 		saveToAdBuffer(response)
 		local convertedResponse = u8:decode(response)
 		sampSendDialogResponse(698, 1, -1, convertedResponse)
@@ -80,6 +83,9 @@ function doSendResponse()
 	if response ~= '' and not response:match("^%s*$") then
 		if windows.help[0] and ui.search then
 			flags.saveHelpScroll = true
+		end
+		if not response:match("[%.%!%?]%s*$") then
+			response = response .. "."
 		end
 		saveToAdBuffer(response)
 		local convertedResponse = u8:decode(response)
