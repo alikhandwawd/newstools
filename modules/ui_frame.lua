@@ -1896,6 +1896,7 @@ if imgui and vk and fa and requests and encoding and ev then
 	imgui.OnFrame(function() return windows.help[0] end, function()
 		local colorCount = baseTheme.enabled and pushBaseColors() or pushRgbColors()
 		if not colorCount then colorCount = 0 end
+		ui.hoveredBindText = nil
 		if flags.saveHelpScroll then
 			ui.search.scrollPos = imgui.GetScrollY()
 			flags.saveHelpScroll = false
@@ -2139,9 +2140,12 @@ if imgui and vk and fa and requests and encoding and ev then
 												ui.buffer.rightClickTime[buttonKey] = currentTime
 											end
 										end
-										if imgui.IsItemHovered() then 
+										if imgui.IsItemHovered() then
+											ui.hoveredBindText = buttonText
 											imgui.BeginTooltip()
 											imgui.Text(buttonText)
+											imgui.Separator()
+											imgui.TextColored(imgui.ImVec4(0.4, 0.8, 1, 1), 'Ctrl+C — скопировать содержимое')
 											imgui.Separator()
 											imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), 'Кликните два раза ПКМ чтобы удалить')
 											imgui.EndTooltip()
@@ -2217,9 +2221,12 @@ if imgui and vk and fa and requests and encoding and ev then
 												ui.buffer.rightClickTime[buttonKey] = currentTime
 											end
 										end
-										if imgui.IsItemHovered() then 
+										if imgui.IsItemHovered() then
+											ui.hoveredBindText = buttonText
 											imgui.BeginTooltip()
 											imgui.Text(buttonText)
+											imgui.Separator()
+											imgui.TextColored(imgui.ImVec4(0.4, 0.8, 1, 1), 'Ctrl+C — скопировать содержимое')
 											imgui.Separator()
 											imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), 'Кликните два раза ПКМ чтобы удалить')
 											imgui.EndTooltip()
@@ -2290,9 +2297,12 @@ if imgui and vk and fa and requests and encoding and ev then
 												ui.buffer.rightClickTime[buttonKey] = currentTime
 											end
 										end
-										if imgui.IsItemHovered() then 
+										if imgui.IsItemHovered() then
+											ui.hoveredBindText = buttonText
 											imgui.BeginTooltip()
 											imgui.Text(buttonText)
+											imgui.Separator()
+											imgui.TextColored(imgui.ImVec4(0.4, 0.8, 1, 1), 'Ctrl+C — скопировать содержимое')
 											imgui.Separator()
 											imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), 'Кликните два раза ПКМ чтобы удалить')
 											imgui.EndTooltip()
@@ -2360,9 +2370,12 @@ if imgui and vk and fa and requests and encoding and ev then
 											ui.buffer.rightClickTime[buttonKey] = currentTime
 										end
 									end
-									if imgui.IsItemHovered() then 
+									if imgui.IsItemHovered() then
+										ui.hoveredBindText = buttonText
 										imgui.BeginTooltip()
 										imgui.Text(buttonText)
+										imgui.Separator()
+										imgui.TextColored(imgui.ImVec4(0.4, 0.8, 1, 1), 'Ctrl+C — скопировать содержимое')
 										if isBufferCategory then
 											imgui.Separator()
 											imgui.TextColored(imgui.ImVec4(1, 0, 0, 1), 'Кликните два раза ПКМ чтобы удалить буфер')
