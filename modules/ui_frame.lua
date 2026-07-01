@@ -3693,6 +3693,40 @@ if imgui and vk and fa and requests and encoding and ev then
 					imgui.TextColored(imgui.ImVec4(0.3, 0.85, 0.4, 1), 'Проверить наличие новых версий скрипта')
 					imgui.EndTooltip()
 				end
+				imgui.SetCursorPos(imgui.ImVec2(imgui.GetWindowWidth() - 155, 65))
+				imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.2, 0.5, 0.8, 1))
+				imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.3, 0.6, 0.9, 1))
+				imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.15, 0.4, 0.7, 1))
+				if imgui.Button('##updateModulesBtn', imgui.ImVec2(145,35)) then
+					if not (flags and flags.updaterBusy) then
+						if flags then
+							flags.blockWindowsOpenDuringDownload = true
+							flags.updaterBusy = true
+						end
+						updateModulesOnly(false)
+					else
+						AddNotification("[News Helper]", "Обновление уже выполняется", "warn", 3.0)
+					end
+				end
+				imgui.PopStyleColor(3)
+				local modBtnPos = imgui.GetItemRectMin()
+				if fa_font then imgui.PushFont(fa_font) end
+				local modIcon = fa('puzzle_piece')
+				local modIconSize = imgui.CalcTextSize(modIcon)
+				local modIconX = modBtnPos.x + 10
+				local modIconY = modBtnPos.y + (35 - modIconSize.y) / 2
+				drawList:AddText(imgui.ImVec2(modIconX, modIconY), imgui.GetColorU32Vec4(imgui.ImVec4(1, 1, 1, 1)), modIcon)
+				if fa_font then imgui.PopFont() end
+				local modText = 'Обновить модули'
+				local modTextSize = imgui.CalcTextSize(modText)
+				local modTextX = modBtnPos.x + 20 + (125 - modTextSize.x) / 2
+				local modTextY = modBtnPos.y + (35 - modTextSize.y) / 2
+				drawList:AddText(imgui.ImVec2(modTextX, modTextY), imgui.GetColorU32Vec4(imgui.ImVec4(1, 1, 1, 1)), modText)
+				if imgui.IsItemHovered() then
+					imgui.BeginTooltip()
+					imgui.TextColored(imgui.ImVec4(0.4, 0.7, 1, 1), 'Принудительно перекачать модули скрипта\n(используйте, если после обновления\nчего-то не хватает)')
+					imgui.EndTooltip()
+				end
 				imgui.Spacing()
 				imgui.Spacing()
 				imgui.Separator()
