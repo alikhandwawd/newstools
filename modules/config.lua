@@ -744,11 +744,11 @@ function uploadBufferToServer()
 			return
 		end
 		local entries = {}
-		for _, entry in ipairs(bufferData) do
+		for idx, entry in ipairs(bufferData) do
 			local adText = entry.advertisement or ""
 			local edText = entry.editedText or ""
 			if adText ~= "" and adText ~= "+" and #adText >= 5 and not adText:match("^%a%a%a?%a?$") then
-				local entryId = ((entry.author or "") .. "_" .. (entry.phone or "") .. "_" .. adText:sub(1, 20)):gsub('[^%w_%-]', '_')
+				local entryId = "buf_" .. tostring(idx) .. "_" .. tostring(math.floor(os.clock() * 1000))
 				local combined = (adText .. " | " .. edText):gsub('"', '\\"'):gsub('\n', ' '):gsub('\r', '')
 				local cleanAuthor = (entry.author or ""):gsub('"', '\\"')
 				local cleanPhone = (entry.phone or ""):gsub('"', '\\"')
