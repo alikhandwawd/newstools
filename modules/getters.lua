@@ -1,5 +1,3 @@
-function test4()
-end
 function getFirstPlaceInfo()
 	if not efir.counter or not next(efir.counter) then
 		return nil, 0
