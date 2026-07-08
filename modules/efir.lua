@@ -1,3 +1,5 @@
+function test3()
+end
 function replaceEfirVariables(text)
 	if not text then return "" end
 	local result = text
