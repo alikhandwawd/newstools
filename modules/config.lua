@@ -628,7 +628,7 @@ function saveToAdBuffer(editedText, force)
 				end
 			end
 		end
-		if indexEntry and indexEntry.advertisement and indexEntry.advertisement ~= "" then
+		if indexEntry and indexEntry.advertisement and indexEntry.advertisement ~= "" and settings.suggestedButtons.enabled[0] then
 			local entryId = (indexEntry.author or "") .. "_" .. (indexEntry.phone or "") .. "_" .. tostring(math.floor(os.clock() * 1000))
 			local adText = (indexEntry.advertisement or ""):gsub('"', '\\"'):gsub('\n', ' '):gsub('\r', '')
 			local edText = (indexEntry.editedText or ""):gsub('"', '\\"'):gsub('\n', ' '):gsub('\r', '')
