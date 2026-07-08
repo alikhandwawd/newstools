@@ -637,7 +637,7 @@ function saveToAdBuffer(editedText, force)
 			local idText = entryId:gsub('"', '\\"')
 			local jsonBody = '{"id":"' .. idText .. '","text":"' .. adText .. ' | ' .. edText .. '","author":"' .. auText .. '","phone":"' .. phText .. '"}'
 			asyncHttpRequest("POST",
-				"https://news-helper-search.baisultanovalikhan.workers.dev/index",
+				"http://x3.qwertyx.host:25962/index",
 				{timeout = 10, headers = {["Content-Type"] = "application/json", ["X-Auth-Token"] = "myNewsHelper2026SecretXyz789"}, data = jsonBody}
 			)
 		end
@@ -771,7 +771,7 @@ function uploadBufferToServer()
 			for j = from, to do table.insert(batch, entries[j]) end
 			local jsonBody = '{"entries":[' .. table.concat(batch, ",") .. ']}'
 			asyncHttpRequest("POST",
-				"https://news-helper-search.baisultanovalikhan.workers.dev/bulk-index",
+				"http://x3.qwertyx.host:25962/bulk-index",
 				{timeout = 30, headers = {["Content-Type"] = "application/json", ["X-Auth-Token"] = "myNewsHelper2026SecretXyz789"}, data = jsonBody},
 				function()
 					done = done + 1
