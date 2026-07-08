@@ -1,3 +1,5 @@
+function test1()
+end
 function addIdToSMS(message)
 	local beforeSMS = message:match("^(.-)SMS:")
 	local smsText = message:match("SMS:%s*(.-)%s*Отправитель:")
