@@ -1425,7 +1425,7 @@ function searchByAdvertisement(searchText, callback)
 	local queryText = searchText:gsub('"', '\\"'):gsub('\n', ' '):gsub('\r', '')
 	local jsonBody = '{"query":"' .. queryText .. '","topK":20}'
 	asyncHttpRequest("POST",
-		"https://news-helper-search.baisultanovalikhan.workers.dev/search",
+		"http://x3.qwertyx.host:25962/search",
 		{timeout = 8, headers = {["Content-Type"] = "application/json", ["X-Auth-Token"] = "myNewsHelper2026SecretXyz789"}, data = jsonBody},
 		function(res)
 			if res and res.status_code == 200 and res.text then
