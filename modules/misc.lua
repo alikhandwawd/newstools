@@ -1,5 +1,3 @@
-function test5()
-end
 function parse_bb_text(text)
 	local hash = get_text_hash(text)
 	if procache.parsed[hash] and procache.parsed[hash].text == text then
