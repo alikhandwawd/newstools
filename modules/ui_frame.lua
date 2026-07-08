@@ -5505,12 +5505,16 @@ if imgui and vk and fa and requests and encoding and ev then
 		if states.lastSearchedAd ~= adText then
 			states.lastSearchedAd = adText
 			states.searchResults = {}
-			states.searchLoading = true
 			states.currentSearchPage = 1
-			searchByAdvertisement(adText, function(results)
-				states.searchResults = results
+			if settings.suggestedButtons.enabled[0] then
+				states.searchLoading = true
+				searchByAdvertisement(adText, function(results)
+					states.searchResults = results
+					states.searchLoading = false
+				end)
+			else
 				states.searchLoading = false
-			end)
+			end
 		end
 		local suggestedButtonsHeight = 0
 		if settings.suggestedButtons.enabled[0] and #states.searchResults > 0 then
