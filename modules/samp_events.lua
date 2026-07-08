@@ -1,5 +1,3 @@
-function test6()
-end
 if imgui and vk and fa and requests and encoding and ev then	
 	function ev.onShowDialog(id, style, title, button1, button2, text)
 		if id == 856 then
