@@ -1,5 +1,3 @@
-function test2()
-end
 local function asyncHttpRequest(method, url, args, resolve, reject)
 	local request_thread = effil.thread(function(method, url, args)
 		local requests = require 'requests'
