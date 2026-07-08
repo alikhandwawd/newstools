@@ -1,5 +1,3 @@
-function test8()
-end
 if imgui and vk and fa and requests and encoding and ev then	
 	imgui.OnFrame(function() return commandRPSystem.editWindow[0] or anim.commandRP.editWindow.alpha > 0.01 end, function(self)
 		local colorCount = baseTheme.enabled and pushBaseColors() or pushRgbColors()
