@@ -1224,6 +1224,7 @@ local function levenshtein(s, t)
 	end
 	return prev[lt]
 end
+
 local function fuzzyWordScore(keyword, adWord)
 	local lk, la = utf8_len(keyword), utf8_len(adWord)
 	if lk == 0 or la == 0 then return 0 end
@@ -1251,6 +1252,7 @@ local function fuzzyWordScore(keyword, adWord)
 	end
 	return score
 end
+
 local function detectAdType(text)
 	local buyWords  = { куплю=true, куп=true, куплюсь=true, ищу=true, buy=true }
 	local sellWords = { продам=true, прод=true, пр=true, продаю=true, продается=true, продаётся=true, sell=true, прдм=true, прдаю=true }
@@ -1264,6 +1266,7 @@ local function detectAdType(text)
 	end
 	return nil
 end
+
 local ftWords = { фт=true, ft=true, фулл=true }
 local function normalizeAdText(text)
 	local parts = {}
