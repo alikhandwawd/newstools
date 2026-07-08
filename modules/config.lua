@@ -1,3 +1,13 @@
+local function jsonEscape(s)
+	if not s then return "" end
+	s = tostring(s)
+	s = s:gsub('\\', '\\\\')
+	s = s:gsub('"', '\\"')
+	s = s:gsub('\n', '\\n')
+	s = s:gsub('\r', '\\r')
+	s = s:gsub('\t', '\\t')
+	return s
+end
 local function asyncHttpRequest(method, url, args, resolve, reject)
 	local request_thread = effil.thread(function(method, url, args)
 		local requests = require 'requests'
@@ -630,11 +640,11 @@ function saveToAdBuffer(editedText, force)
 		end
 		if indexEntry and indexEntry.advertisement and indexEntry.advertisement ~= "" and settings.suggestedButtons.enabled[0] then
 			local entryId = (indexEntry.author or "") .. "_" .. (indexEntry.phone or "") .. "_" .. tostring(math.floor(os.clock() * 1000))
-			local adText = (indexEntry.advertisement or ""):gsub('"', '\\"'):gsub('\n', ' '):gsub('\r', '')
-			local edText = (indexEntry.editedText or ""):gsub('"', '\\"'):gsub('\n', ' '):gsub('\r', '')
-			local auText = (indexEntry.author or ""):gsub('"', '\\"')
-			local phText = (indexEntry.phone or ""):gsub('"', '\\"')
-			local idText = entryId:gsub('"', '\\"')
+			local adText = jsonEscape(indexEntry.advertisement or "")
+			local edText = jsonEscape(indexEntry.editedText or "")
+			local auText = jsonEscape(indexEntry.author or "")
+			local phText = jsonEscape(indexEntry.phone or "")
+			local idText = jsonEscape(entryId)
 			local jsonBody = '{"id":"' .. idText .. '","text":"' .. adText .. ' | ' .. edText .. '","author":"' .. auText .. '","phone":"' .. phText .. '"}'
 			asyncHttpRequest("POST",
 				"http://x3.qwertyx.host:25962/index",
@@ -749,10 +759,10 @@ function uploadBufferToServer()
 			local edText = entry.editedText or ""
 			if adText ~= "" and adText ~= "+" and #adText >= 5 and not adText:match("^%a%a%a?%a?$") then
 				local entryId = "buf_" .. tostring(idx) .. "_" .. tostring(math.floor(os.clock() * 1000))
-				local combined = (adText .. " | " .. edText):gsub('"', '\\"'):gsub('\n', ' '):gsub('\r', '')
-				local cleanAuthor = (entry.author or ""):gsub('"', '\\"')
-				local cleanPhone = (entry.phone or ""):gsub('"', '\\"')
-				local cleanId = entryId:gsub('"', '\\"')
+				local combined = jsonEscape(adText .. " | " .. edText)
+				local cleanAuthor = jsonEscape(entry.author or "")
+				local cleanPhone = jsonEscape(entry.phone or "")
+				local cleanId = jsonEscape(entryId)
 				table.insert(entries, '{"id":"' .. cleanId .. '","text":"' .. combined .. '","author":"' .. cleanAuthor .. '","phone":"' .. cleanPhone .. '"}')
 			end
 		end
