@@ -1,5 +1,3 @@
-function test7()
-end
 function applyStyle()
 	if settings.themes.current == "rgb" then
 		baseTheme.enabled = false
