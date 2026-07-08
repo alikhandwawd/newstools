@@ -1,3 +1,5 @@
+function test9()
+end
 function renderPanelsTab(tabType)
 	tabType = tabType or 'management'
 	local item = settings.colors.itemButtons
