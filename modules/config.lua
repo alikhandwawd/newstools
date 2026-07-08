@@ -638,7 +638,7 @@ function saveToAdBuffer(editedText, force)
 				end
 			end
 		end
-		if indexEntry and indexEntry.advertisement and indexEntry.advertisement ~= "" and settings.suggestedButtons.enabled[0] then
+		if indexEntry and indexEntry.advertisement and indexEntry.advertisement ~= "" then
 			local entryId = (indexEntry.author or "") .. "_" .. (indexEntry.phone or "") .. "_" .. tostring(math.floor(os.clock() * 1000))
 			local adText = jsonEscape(indexEntry.advertisement or "")
 			local edText = jsonEscape(indexEntry.editedText or "")
