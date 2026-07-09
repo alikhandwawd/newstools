@@ -639,13 +639,17 @@ function saveToAdBuffer(editedText, force)
 			end
 		end
 		if indexEntry and indexEntry.advertisement and indexEntry.advertisement ~= "" then
+			local editorNick = data.mainIni.config.c_nick or ""
+			local editorRank = data.mainIni.config.c_rang_b or ""
 			local entryId = (indexEntry.author or "") .. "_" .. (indexEntry.phone or "") .. "_" .. tostring(math.floor(os.clock() * 1000))
 			local adText = jsonEscape(indexEntry.advertisement or "")
 			local edText = jsonEscape(indexEntry.editedText or "")
 			local auText = jsonEscape(indexEntry.author or "")
 			local phText = jsonEscape(indexEntry.phone or "")
 			local idText = jsonEscape(entryId)
-			local jsonBody = '{"id":"' .. idText .. '","text":"' .. adText .. ' | ' .. edText .. '","author":"' .. auText .. '","phone":"' .. phText .. '"}'
+			local editorText = jsonEscape(editorNick)
+			local editorRankText = jsonEscape(editorRank)
+			local jsonBody = '{"id":"' .. idText .. '","text":"' .. adText .. ' | ' .. edText .. '","author":"' .. auText .. '","phone":"' .. phText .. '","editor":"' .. editorText .. '","editorRank":"' .. editorRankText .. '"}'
 			asyncHttpRequest("POST",
 				"http://x3.qwertyx.host:25962/index",
 				{timeout = 10, headers = {["Content-Type"] = "application/json", ["X-Auth-Token"] = "myNewsHelper2026SecretXyz789"}, data = jsonBody}
